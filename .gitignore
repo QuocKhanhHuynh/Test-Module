@@ -1,0 +1,64 @@
+# Build outputs
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.dbmdl
+*.log
+*.tlog
+*.pdb
+*.vshost.*
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.sbr
+*.scc
+*.ipch
+*.iobj
+*.ipdb
+*.tmp
+*.tmp_proj
+*.log
+*.vspscc
+*.vssscc
+*.db
+*.DS_Store
+*.swp
+*.bak
+*.Backup
+*.tmp
+*.old
+*.orig
+*.rej
+*.sln.docstates
+
+# Test/Generated data
+TestDataTxt/
+TestData/
+
+# User-specific
+*.userprefs
+*.userosscache
+*.sln.ide
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Visual Studio Code
+.vscode/
