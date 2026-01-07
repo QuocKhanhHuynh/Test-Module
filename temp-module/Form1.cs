@@ -39,6 +39,10 @@ namespace temp_module
         private DateTime _lastOcrProcessTime = DateTime.MinValue;
         private const int MIN_OCR_INTERVAL_MS = 500; // Chỉ xử lý OCR tối đa 2 lần/giây
 
+        private Stopwatch sw1 = new Stopwatch();
+        private Stopwatch sw2 = new Stopwatch();
+        private Stopwatch sw3 = new Stopwatch();
+
         public Form1()
         {
             InitializeComponent();
@@ -365,59 +369,38 @@ namespace temp_module
             }
 
 
-            /*try
+            // ...existing code...
+            DetectInfo result1 = null, result2 = null, result3 = null;
+            double totalTime1 = 0, totalTime2 = 0, totalTime3 = 0;
+            var mat = BitmapConverter.ToMat(image);
+            try
             {
-                var mat = BitmapConverter.ToMat(image);
-                System.Threading.Tasks.Task.Run(() =>
+                Mat compressed1 = new Mat();
+                var encodeParams1 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 10) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData1, encodeParams1);
+                compressed1 = Cv2.ImDecode(jpegData1, ImreadModes.Color);
+                sw1.Restart();
+                result1 = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed1.Clone(),
+                    yoloDetector: _yoloDetectors[0],
+                    ocr: _ocrEngines[0],
+                    rotationDetector: _rotationDetectors[0],
+                    weChatQRCode: _weChatQRCodes[0],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                totalTime1 = sw1.Elapsed.TotalMilliseconds;
+                this.BeginInvoke(new Action(() =>
                 {
-                    try
-                    {
-                        Mat compressed = new Mat();
-
-                        var encodeParams = new[]
-                        {
-                                new ImageEncodingParam(ImwriteFlags.JpegQuality, 10)
-                            };
-
-                        // Encode (nén)
-                        Cv2.ImEncode(".jpg", mat, out byte[] jpegData, encodeParams);
-
-                        // Decode lại thành Mat
-                        compressed = Cv2.ImDecode(jpegData, ImreadModes.Color);
-
-                        var result = DetectLabelFromImageV2.DetectLabel(
-                            workSessionId: 0,
-                            frame: compressed.Clone(),
-                            yoloDetector: _yoloDetectors[0],
-                            ocr: _ocrEngines[0],
-                            rotationDetector: _rotationDetectors[0],
-                            weChatQRCode: _weChatQRCodes[0],
-                            currentThreshold: 180,
-                            cameraBox: picOriginal,
-                            processImage: picProcessed,
-                            isDebugOcr: false,
-                            fileName: null
-                        );
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            if (result != null)
-                            {
-                                DisplayOCRResults(result, 1);
-                            }
-                            else
-                            {
-                                AppendTextBoxResults($"[Task 1] Không phát hiện được label hoặc QR code.\r\n");
-                            }
-                        }));
-                    }
-                    catch (Exception ex2)
-                    {
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            AppendTextBoxResults($"[Task 1] Lỗi xử lý OCR: {ex2.Message}\r\n");
-                        }));
-                    }
-                });
+                    if (result1 != null)
+                        DisplayOCRResults(result1, 1);
+                    else
+                        AppendTextBoxResults($"[Task 1] Không phát hiện được label hoặc QR code.\r\n");
+                }));
             }
             catch (Exception ex)
             {
@@ -427,63 +410,35 @@ namespace temp_module
                     AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
                 }));
             }
-
-
-
 
             try
             {
-                var mat = BitmapConverter.ToMat(image);
-                System.Threading.Tasks.Task.Run(() =>
+                Mat compressed2 = new Mat();
+                var encodeParams2 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 50) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData2, encodeParams2);
+                compressed2 = Cv2.ImDecode(jpegData2, ImreadModes.Color);
+                sw2.Restart();
+                result2 = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed2.Clone(),
+                    yoloDetector: _yoloDetectors[1],
+                    ocr: _ocrEngines[1],
+                    rotationDetector: _rotationDetectors[1],
+                    weChatQRCode: _weChatQRCodes[1],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                totalTime2 = sw2.Elapsed.TotalMilliseconds;
+                this.BeginInvoke(new Action(() =>
                 {
-                    try
-                    {
-                        Mat compressed = new Mat();
-
-                        var encodeParams = new[]
-                        {
-                                new ImageEncodingParam(ImwriteFlags.JpegQuality, 50)
-                            };
-
-                        // Encode (nén)
-                        Cv2.ImEncode(".jpg", mat, out byte[] jpegData, encodeParams);
-
-                        // Decode lại thành Mat
-                        compressed = Cv2.ImDecode(jpegData, ImreadModes.Color);
-
-                        var result = DetectLabelFromImageV2.DetectLabel(
-                            workSessionId: 0,
-                            frame: compressed.Clone(),
-                            yoloDetector: _yoloDetectors[1],
-                            ocr: _ocrEngines[1],
-                            rotationDetector: _rotationDetectors[1],
-                            weChatQRCode: _weChatQRCodes[1],
-                            currentThreshold: 180,
-                            cameraBox: picOriginal,
-                            processImage: picProcessed,
-                            isDebugOcr: false,
-                            fileName: null
-                        );
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            if (result != null)
-                            {
-                                DisplayOCRResults(result, 2);
-                            }
-                            else
-                            {
-                                AppendTextBoxResults($"[Task 2] Không phát hiện được label hoặc QR code.\r\n");
-                            }
-                        }));
-                    }
-                    catch (Exception ex2)
-                    {
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            AppendTextBoxResults($"[Task 2] Lỗi xử lý OCR: {ex2.Message}\r\n");
-                        }));
-                    }
-                });
+                    if (result2 != null)
+                        DisplayOCRResults(result2, 2);
+                    else
+                        AppendTextBoxResults($"[Task 2] Không phát hiện được label hoặc QR code.\r\n");
+                }));
             }
             catch (Exception ex)
             {
@@ -492,64 +447,36 @@ namespace temp_module
                 {
                     AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
                 }));
-            }*/
-
-
-
+            }
 
             try
             {
-                var mat = BitmapConverter.ToMat(image);
-                System.Threading.Tasks.Task.Run(() =>
+                Mat compressed3 = new Mat();
+                var encodeParams3 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 100) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
+                compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
+                sw3.Restart();
+                result3 = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed3.Clone(),
+                    yoloDetector: _yoloDetectors[2],
+                    ocr: _ocrEngines[2],
+                    rotationDetector: _rotationDetectors[2],
+                    weChatQRCode: _weChatQRCodes[2],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                totalTime3 = sw3.Elapsed.TotalMilliseconds;
+                this.BeginInvoke(new Action(() =>
                 {
-                    try
-                    {
-                        Mat compressed = new Mat();
-
-                        var encodeParams = new[]
-                        {
-                                new ImageEncodingParam(ImwriteFlags.JpegQuality, 100)
-                            };
-
-                        // Encode (nén)
-                        Cv2.ImEncode(".jpg", mat, out byte[] jpegData, encodeParams);
-
-                        // Decode lại thành Mat
-                        compressed = Cv2.ImDecode(jpegData, ImreadModes.Color);
-
-                        var result = DetectLabelFromImageV2.DetectLabel(
-                            workSessionId: 0,
-                            frame: compressed.Clone(),
-                            yoloDetector: _yoloDetectors[2],
-                            ocr: _ocrEngines[2],
-                            rotationDetector: _rotationDetectors[2],
-                            weChatQRCode: _weChatQRCodes[2],
-                            currentThreshold: 180,
-                            cameraBox: picOriginal,
-                            processImage: picProcessed,
-                            isDebugOcr: false,
-                            fileName: null
-                        );
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            if (result != null)
-                            {
-                                DisplayOCRResults(result, 3);
-                            }
-                            else
-                            {
-                                AppendTextBoxResults($"[Task 3] Không phát hiện được label hoặc QR code.\r\n");
-                            }
-                        }));
-                    }
-                    catch (Exception ex2)
-                    {
-                        this.BeginInvoke(new Action(() =>
-                        {
-                            AppendTextBoxResults($"[Task 3] Lỗi xử lý OCR: {ex2.Message}\r\n");
-                        }));
-                    }
-                });
+                    if (result3 != null)
+                        DisplayOCRResults(result3, 3);
+                    else
+                        AppendTextBoxResults($"[Task 3] Không phát hiện được label hoặc QR code.\r\n");
+                }));
             }
             catch (Exception ex)
             {
@@ -558,6 +485,24 @@ namespace temp_module
                 {
                     AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
                 }));
+            }
+
+            // Ghi kết quả vào Excel
+            try
+            {
+                string excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.xlsx");
+                string txtDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "txt");
+                OcrExcelWriter.WriteOcrResult(
+                    excelPath,
+                    txtDir,
+                    _lastImportedImagePath ?? "",
+                    totalTime1, totalTime2, totalTime3,
+                    result1, result2, result3
+                );
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Excel Write] Error: {ex.Message}");
             }
         }
 

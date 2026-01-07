@@ -28,288 +28,303 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.panelControls = new System.Windows.Forms.Panel();
-            this.btnImportImage = new System.Windows.Forms.Button();
-            this.btnStartCamera = new System.Windows.Forms.Button();
-            this.btnStopCamera = new System.Windows.Forms.Button();
-            this.comboBoxCameras = new System.Windows.Forms.ComboBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.splitContainerMain = new System.Windows.Forms.SplitContainer();
-            this.splitContainerLeft = new System.Windows.Forms.SplitContainer();
-            this.panelOriginal = new System.Windows.Forms.Panel();
-            this.labelOriginal = new System.Windows.Forms.Label();
-            this.picOriginal = new System.Windows.Forms.PictureBox();
-            this.panelProcessed = new System.Windows.Forms.Panel();
-            this.labelProcessed = new System.Windows.Forms.Label();
-            this.picProcessed = new System.Windows.Forms.PictureBox();
-            this.panelResults = new System.Windows.Forms.Panel();
-            this.labelResults = new System.Windows.Forms.Label();
-            this.textBoxResults = new System.Windows.Forms.TextBox();
-            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.btnSaveResult = new System.Windows.Forms.Button();
-            this.panelControls.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
-            this.splitContainerMain.Panel1.SuspendLayout();
-            this.splitContainerMain.Panel2.SuspendLayout();
-            this.splitContainerMain.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerLeft)).BeginInit();
-            this.splitContainerLeft.Panel1.SuspendLayout();
-            this.splitContainerLeft.Panel2.SuspendLayout();
-            this.splitContainerLeft.SuspendLayout();
-            this.panelOriginal.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picOriginal)).BeginInit();
-            this.panelProcessed.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picProcessed)).BeginInit();
-            this.panelResults.SuspendLayout();
-            this.SuspendLayout();
+            panelControls = new Panel();
+            btnImportImage = new Button();
+            btnStartCamera = new Button();
+            btnStopCamera = new Button();
+            comboBoxCameras = new ComboBox();
+            label1 = new Label();
+            btnSaveResult = new Button();
+            splitContainerMain = new SplitContainer();
+            splitContainerLeft = new SplitContainer();
+            panelOriginal = new Panel();
+            labelOriginal = new Label();
+            picOriginal = new PictureBox();
+            panelProcessed = new Panel();
+            labelProcessed = new Label();
+            picProcessed = new PictureBox();
+            panelResults = new Panel();
+            labelResults = new Label();
+            textBoxResults = new TextBox();
+            openFileDialog = new OpenFileDialog();
+            panelControls.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainerMain).BeginInit();
+            splitContainerMain.Panel1.SuspendLayout();
+            splitContainerMain.Panel2.SuspendLayout();
+            splitContainerMain.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainerLeft).BeginInit();
+            splitContainerLeft.Panel1.SuspendLayout();
+            splitContainerLeft.Panel2.SuspendLayout();
+            splitContainerLeft.SuspendLayout();
+            panelOriginal.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)picOriginal).BeginInit();
+            panelProcessed.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)picProcessed).BeginInit();
+            panelResults.SuspendLayout();
+            SuspendLayout();
             // 
             // panelControls
             // 
-            this.panelControls.Controls.Add(this.btnImportImage);
-            this.panelControls.Controls.Add(this.btnStartCamera);
-            this.panelControls.Controls.Add(this.btnStopCamera);
-            this.panelControls.Controls.Add(this.comboBoxCameras);
-            this.panelControls.Controls.Add(this.label1);
-            this.panelControls.Controls.Add(this.btnSaveResult);
-            this.panelControls.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panelControls.Location = new System.Drawing.Point(0, 0);
-            this.panelControls.Name = "panelControls";
-            this.panelControls.Size = new System.Drawing.Size(1200, 60);
-            this.panelControls.TabIndex = 0;
+            panelControls.Controls.Add(btnImportImage);
+            panelControls.Controls.Add(btnStartCamera);
+            panelControls.Controls.Add(btnStopCamera);
+            panelControls.Controls.Add(comboBoxCameras);
+            panelControls.Controls.Add(label1);
+            panelControls.Controls.Add(btnSaveResult);
+            panelControls.Dock = DockStyle.Top;
+            panelControls.Location = new Point(0, 0);
+            panelControls.Margin = new Padding(4, 5, 4, 5);
+            panelControls.Name = "panelControls";
+            panelControls.Size = new Size(1714, 100);
+            panelControls.TabIndex = 0;
             // 
             // btnImportImage
             // 
-            this.btnImportImage.Location = new System.Drawing.Point(450, 15);
-            this.btnImportImage.Name = "btnImportImage";
-            this.btnImportImage.Size = new System.Drawing.Size(120, 30);
-            this.btnImportImage.TabIndex = 4;
-            this.btnImportImage.Text = "Import Ảnh";
-            this.btnImportImage.UseVisualStyleBackColor = true;
-            this.btnImportImage.Click += new System.EventHandler(this.btnImportImage_Click);
+            btnImportImage.Location = new Point(643, 25);
+            btnImportImage.Margin = new Padding(4, 5, 4, 5);
+            btnImportImage.Name = "btnImportImage";
+            btnImportImage.Size = new Size(171, 50);
+            btnImportImage.TabIndex = 4;
+            btnImportImage.Text = "Import Ảnh";
+            btnImportImage.UseVisualStyleBackColor = true;
+            btnImportImage.Click += btnImportImage_Click;
             // 
             // btnStartCamera
             // 
-            this.btnStartCamera.Location = new System.Drawing.Point(320, 15);
-            this.btnStartCamera.Name = "btnStartCamera";
-            this.btnStartCamera.Size = new System.Drawing.Size(120, 30);
-            this.btnStartCamera.TabIndex = 3;
-            this.btnStartCamera.Text = "Bật Camera";
-            this.btnStartCamera.UseVisualStyleBackColor = true;
-            this.btnStartCamera.Click += new System.EventHandler(this.btnStartCamera_Click);
+            btnStartCamera.Location = new Point(457, 25);
+            btnStartCamera.Margin = new Padding(4, 5, 4, 5);
+            btnStartCamera.Name = "btnStartCamera";
+            btnStartCamera.Size = new Size(171, 50);
+            btnStartCamera.TabIndex = 3;
+            btnStartCamera.Text = "Bật Camera";
+            btnStartCamera.UseVisualStyleBackColor = true;
+            btnStartCamera.Click += btnStartCamera_Click;
             // 
             // btnStopCamera
             // 
-            this.btnStopCamera.Enabled = false;
-            this.btnStopCamera.Location = new System.Drawing.Point(320, 15);
-            this.btnStopCamera.Name = "btnStopCamera";
-            this.btnStopCamera.Size = new System.Drawing.Size(120, 30);
-            this.btnStopCamera.TabIndex = 2;
-            this.btnStopCamera.Text = "Tắt Camera";
-            this.btnStopCamera.UseVisualStyleBackColor = true;
-            this.btnStopCamera.Click += new System.EventHandler(this.btnStopCamera_Click);
+            btnStopCamera.Enabled = false;
+            btnStopCamera.Location = new Point(457, 25);
+            btnStopCamera.Margin = new Padding(4, 5, 4, 5);
+            btnStopCamera.Name = "btnStopCamera";
+            btnStopCamera.Size = new Size(171, 50);
+            btnStopCamera.TabIndex = 2;
+            btnStopCamera.Text = "Tắt Camera";
+            btnStopCamera.UseVisualStyleBackColor = true;
+            btnStopCamera.Click += btnStopCamera_Click;
             // 
             // comboBoxCameras
             // 
-            this.comboBoxCameras.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxCameras.FormattingEnabled = true;
-            this.comboBoxCameras.Location = new System.Drawing.Point(80, 18);
-            this.comboBoxCameras.Name = "comboBoxCameras";
-            this.comboBoxCameras.Size = new System.Drawing.Size(230, 23);
-            this.comboBoxCameras.TabIndex = 1;
+            comboBoxCameras.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBoxCameras.FormattingEnabled = true;
+            comboBoxCameras.Location = new Point(114, 30);
+            comboBoxCameras.Margin = new Padding(4, 5, 4, 5);
+            comboBoxCameras.Name = "comboBoxCameras";
+            comboBoxCameras.Size = new Size(327, 33);
+            comboBoxCameras.TabIndex = 1;
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 21);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(62, 15);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Camera:";
+            label1.AutoSize = true;
+            label1.Location = new Point(17, 35);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(76, 25);
+            label1.TabIndex = 0;
+            label1.Text = "Camera:";
             // 
             // btnSaveResult
             // 
-            this.btnSaveResult.Location = new System.Drawing.Point(580, 15);
-            this.btnSaveResult.Name = "btnSaveResult";
-            this.btnSaveResult.Size = new System.Drawing.Size(120, 30);
-            this.btnSaveResult.TabIndex = 5;
-            this.btnSaveResult.Text = "Lưu thông tin";
-            this.btnSaveResult.UseVisualStyleBackColor = true;
-            this.btnSaveResult.Click += new System.EventHandler(this.btnSaveResult_Click);
+            btnSaveResult.Location = new Point(829, 25);
+            btnSaveResult.Margin = new Padding(4, 5, 4, 5);
+            btnSaveResult.Name = "btnSaveResult";
+            btnSaveResult.Size = new Size(171, 50);
+            btnSaveResult.TabIndex = 5;
+            btnSaveResult.Text = "Lưu thông tin";
+            btnSaveResult.UseVisualStyleBackColor = true;
+            btnSaveResult.Click += btnSaveResult_Click;
             // 
             // splitContainerMain
             // 
-            this.splitContainerMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainerMain.Location = new System.Drawing.Point(0, 60);
-            this.splitContainerMain.Name = "splitContainerMain";
+            splitContainerMain.Dock = DockStyle.Fill;
+            splitContainerMain.Location = new Point(0, 100);
+            splitContainerMain.Margin = new Padding(4, 5, 4, 5);
+            splitContainerMain.Name = "splitContainerMain";
             // 
             // splitContainerMain.Panel1
             // 
-            this.splitContainerMain.Panel1.Controls.Add(this.splitContainerLeft);
+            splitContainerMain.Panel1.Controls.Add(splitContainerLeft);
             // 
             // splitContainerMain.Panel2
             // 
-            this.splitContainerMain.Panel2.Controls.Add(this.panelResults);
-            this.splitContainerMain.Size = new System.Drawing.Size(1200, 690);
-            this.splitContainerMain.SplitterDistance = 800;
-            this.splitContainerMain.TabIndex = 1;
+            splitContainerMain.Panel2.Controls.Add(panelResults);
+            splitContainerMain.Size = new Size(1714, 950);
+            splitContainerMain.SplitterDistance = 1142;
+            splitContainerMain.SplitterWidth = 6;
+            splitContainerMain.TabIndex = 1;
             // 
             // splitContainerLeft
             // 
-            this.splitContainerLeft.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainerLeft.Location = new System.Drawing.Point(0, 0);
-            this.splitContainerLeft.Name = "splitContainerLeft";
-            this.splitContainerLeft.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            splitContainerLeft.Dock = DockStyle.Fill;
+            splitContainerLeft.Location = new Point(0, 0);
+            splitContainerLeft.Margin = new Padding(4, 5, 4, 5);
+            splitContainerLeft.Name = "splitContainerLeft";
+            splitContainerLeft.Orientation = Orientation.Horizontal;
             // 
             // splitContainerLeft.Panel1
             // 
-            this.splitContainerLeft.Panel1.Controls.Add(this.panelOriginal);
+            splitContainerLeft.Panel1.Controls.Add(panelOriginal);
             // 
             // splitContainerLeft.Panel2
             // 
-            this.splitContainerLeft.Panel2.Controls.Add(this.panelProcessed);
-            this.splitContainerLeft.Size = new System.Drawing.Size(800, 690);
-            this.splitContainerLeft.SplitterDistance = 345;
-            this.splitContainerLeft.TabIndex = 0;
+            splitContainerLeft.Panel2.Controls.Add(panelProcessed);
+            splitContainerLeft.Size = new Size(1142, 950);
+            splitContainerLeft.SplitterDistance = 475;
+            splitContainerLeft.SplitterWidth = 7;
+            splitContainerLeft.TabIndex = 0;
             // 
             // panelOriginal
             // 
-            this.panelOriginal.Controls.Add(this.labelOriginal);
-            this.panelOriginal.Controls.Add(this.picOriginal);
-            this.panelOriginal.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelOriginal.Location = new System.Drawing.Point(0, 0);
-            this.panelOriginal.Name = "panelOriginal";
-            this.panelOriginal.Padding = new System.Windows.Forms.Padding(5);
-            this.panelOriginal.Size = new System.Drawing.Size(800, 345);
-            this.panelOriginal.TabIndex = 0;
+            panelOriginal.Controls.Add(labelOriginal);
+            panelOriginal.Controls.Add(picOriginal);
+            panelOriginal.Dock = DockStyle.Fill;
+            panelOriginal.Location = new Point(0, 0);
+            panelOriginal.Margin = new Padding(4, 5, 4, 5);
+            panelOriginal.Name = "panelOriginal";
+            panelOriginal.Padding = new Padding(7, 8, 7, 8);
+            panelOriginal.Size = new Size(1142, 475);
+            panelOriginal.TabIndex = 0;
             // 
             // labelOriginal
             // 
-            this.labelOriginal.AutoSize = true;
-            this.labelOriginal.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.labelOriginal.Location = new System.Drawing.Point(8, 8);
-            this.labelOriginal.Name = "labelOriginal";
-            this.labelOriginal.Size = new System.Drawing.Size(133, 15);
-            this.labelOriginal.TabIndex = 1;
-            this.labelOriginal.Text = "Ảnh Gốc / Camera";
+            labelOriginal.AutoSize = true;
+            labelOriginal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            labelOriginal.Location = new Point(11, 13);
+            labelOriginal.Margin = new Padding(4, 0, 4, 0);
+            labelOriginal.Name = "labelOriginal";
+            labelOriginal.Size = new Size(167, 25);
+            labelOriginal.TabIndex = 1;
+            labelOriginal.Text = "Ảnh Gốc / Camera";
             // 
             // picOriginal
             // 
-            this.picOriginal.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.picOriginal.BackColor = System.Drawing.Color.Black;
-            this.picOriginal.Location = new System.Drawing.Point(8, 28);
-            this.picOriginal.Name = "picOriginal";
-            this.picOriginal.Size = new System.Drawing.Size(784, 309);
-            this.picOriginal.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picOriginal.TabIndex = 0;
-            this.picOriginal.TabStop = false;
+            picOriginal.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            picOriginal.BackColor = Color.Black;
+            picOriginal.Location = new Point(11, 47);
+            picOriginal.Margin = new Padding(4, 5, 4, 5);
+            picOriginal.Name = "picOriginal";
+            picOriginal.Size = new Size(1119, 415);
+            picOriginal.SizeMode = PictureBoxSizeMode.Zoom;
+            picOriginal.TabIndex = 0;
+            picOriginal.TabStop = false;
             // 
             // panelProcessed
             // 
-            this.panelProcessed.Controls.Add(this.labelProcessed);
-            this.panelProcessed.Controls.Add(this.picProcessed);
-            this.panelProcessed.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelProcessed.Location = new System.Drawing.Point(0, 0);
-            this.panelProcessed.Name = "panelProcessed";
-            this.panelProcessed.Padding = new System.Windows.Forms.Padding(5);
-            this.panelProcessed.Size = new System.Drawing.Size(800, 341);
-            this.panelProcessed.TabIndex = 0;
+            panelProcessed.Controls.Add(labelProcessed);
+            panelProcessed.Controls.Add(picProcessed);
+            panelProcessed.Dock = DockStyle.Fill;
+            panelProcessed.Location = new Point(0, 0);
+            panelProcessed.Margin = new Padding(4, 5, 4, 5);
+            panelProcessed.Name = "panelProcessed";
+            panelProcessed.Padding = new Padding(7, 8, 7, 8);
+            panelProcessed.Size = new Size(1142, 468);
+            panelProcessed.TabIndex = 0;
             // 
             // labelProcessed
             // 
-            this.labelProcessed.AutoSize = true;
-            this.labelProcessed.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.labelProcessed.Location = new System.Drawing.Point(8, 8);
-            this.labelProcessed.Name = "labelProcessed";
-            this.labelProcessed.Size = new System.Drawing.Size(108, 15);
-            this.labelProcessed.TabIndex = 1;
-            this.labelProcessed.Text = "Ảnh Đã Xử Lý";
+            labelProcessed.AutoSize = true;
+            labelProcessed.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            labelProcessed.Location = new Point(11, 13);
+            labelProcessed.Margin = new Padding(4, 0, 4, 0);
+            labelProcessed.Name = "labelProcessed";
+            labelProcessed.Size = new Size(127, 25);
+            labelProcessed.TabIndex = 1;
+            labelProcessed.Text = "Ảnh Đã Xử Lý";
             // 
             // picProcessed
             // 
-            this.picProcessed.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.picProcessed.BackColor = System.Drawing.Color.Black;
-            this.picProcessed.Location = new System.Drawing.Point(8, 28);
-            this.picProcessed.Name = "picProcessed";
-            this.picProcessed.Size = new System.Drawing.Size(784, 305);
-            this.picProcessed.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picProcessed.TabIndex = 0;
-            this.picProcessed.TabStop = false;
+            picProcessed.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            picProcessed.BackColor = Color.Black;
+            picProcessed.Location = new Point(11, 47);
+            picProcessed.Margin = new Padding(4, 5, 4, 5);
+            picProcessed.Name = "picProcessed";
+            picProcessed.Size = new Size(1119, 408);
+            picProcessed.SizeMode = PictureBoxSizeMode.Zoom;
+            picProcessed.TabIndex = 0;
+            picProcessed.TabStop = false;
             // 
             // panelResults
             // 
-            this.panelResults.Controls.Add(this.labelResults);
-            this.panelResults.Controls.Add(this.textBoxResults);
-            this.panelResults.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelResults.Location = new System.Drawing.Point(0, 0);
-            this.panelResults.Name = "panelResults";
-            this.panelResults.Padding = new System.Windows.Forms.Padding(5);
-            this.panelResults.Size = new System.Drawing.Size(396, 690);
-            this.panelResults.TabIndex = 0;
+            panelResults.Controls.Add(labelResults);
+            panelResults.Controls.Add(textBoxResults);
+            panelResults.Dock = DockStyle.Fill;
+            panelResults.Location = new Point(0, 0);
+            panelResults.Margin = new Padding(4, 5, 4, 5);
+            panelResults.Name = "panelResults";
+            panelResults.Padding = new Padding(7, 8, 7, 8);
+            panelResults.Size = new Size(566, 950);
+            panelResults.TabIndex = 0;
             // 
             // labelResults
             // 
-            this.labelResults.AutoSize = true;
-            this.labelResults.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.labelResults.Location = new System.Drawing.Point(8, 8);
-            this.labelResults.Name = "labelResults";
-            this.labelResults.Size = new System.Drawing.Size(121, 15);
-            this.labelResults.TabIndex = 1;
-            this.labelResults.Text = "Kết Quả OCR";
+            labelResults.AutoSize = true;
+            labelResults.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            labelResults.Location = new Point(11, 13);
+            labelResults.Margin = new Padding(4, 0, 4, 0);
+            labelResults.Name = "labelResults";
+            labelResults.Size = new Size(123, 25);
+            labelResults.TabIndex = 1;
+            labelResults.Text = "Kết Quả OCR";
             // 
             // textBoxResults
             // 
-            this.textBoxResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxResults.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.textBoxResults.Location = new System.Drawing.Point(8, 28);
-            this.textBoxResults.Multiline = true;
-            this.textBoxResults.Name = "textBoxResults";
-            this.textBoxResults.ReadOnly = true;
-            this.textBoxResults.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBoxResults.Size = new System.Drawing.Size(380, 654);
-            this.textBoxResults.TabIndex = 0;
+            textBoxResults.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            textBoxResults.Font = new Font("Consolas", 9F);
+            textBoxResults.Location = new Point(11, 47);
+            textBoxResults.Margin = new Padding(4, 5, 4, 5);
+            textBoxResults.Multiline = true;
+            textBoxResults.Name = "textBoxResults";
+            textBoxResults.ReadOnly = true;
+            textBoxResults.ScrollBars = ScrollBars.Vertical;
+            textBoxResults.Size = new Size(541, 887);
+            textBoxResults.TabIndex = 0;
             // 
             // openFileDialog
             // 
-            this.openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp|All Files|*.*";
-            this.openFileDialog.Title = "Chọn Ảnh để Xử Lý OCR";
+            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp|All Files|*.*";
+            openFileDialog.Title = "Chọn Ảnh để Xử Lý OCR";
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1200, 750);
-            this.Controls.Add(this.splitContainerMain);
-            this.Controls.Add(this.panelControls);
-            this.MinimumSize = new System.Drawing.Size(800, 600);
-            this.Name = "Form1";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "OCR Camera Module";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.panelControls.ResumeLayout(false);
-            this.panelControls.PerformLayout();
-            this.splitContainerMain.Panel1.ResumeLayout(false);
-            this.splitContainerMain.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
-            this.splitContainerMain.ResumeLayout(false);
-            this.splitContainerLeft.Panel1.ResumeLayout(false);
-            this.splitContainerLeft.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainerLeft)).EndInit();
-            this.splitContainerLeft.ResumeLayout(false);
-            this.panelOriginal.ResumeLayout(false);
-            this.panelOriginal.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picOriginal)).EndInit();
-            this.panelProcessed.ResumeLayout(false);
-            this.panelProcessed.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picProcessed)).EndInit();
-            this.panelResults.ResumeLayout(false);
-            this.panelResults.PerformLayout();
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1714, 1050);
+            Controls.Add(splitContainerMain);
+            Controls.Add(panelControls);
+            Margin = new Padding(4, 5, 4, 5);
+            MinimumSize = new Size(1133, 963);
+            Name = "Form1";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "OCR Camera Module";
+            FormClosing += Form1_FormClosing;
+            panelControls.ResumeLayout(false);
+            panelControls.PerformLayout();
+            splitContainerMain.Panel1.ResumeLayout(false);
+            splitContainerMain.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainerMain).EndInit();
+            splitContainerMain.ResumeLayout(false);
+            splitContainerLeft.Panel1.ResumeLayout(false);
+            splitContainerLeft.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainerLeft).EndInit();
+            splitContainerLeft.ResumeLayout(false);
+            panelOriginal.ResumeLayout(false);
+            panelOriginal.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)picOriginal).EndInit();
+            panelProcessed.ResumeLayout(false);
+            panelProcessed.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)picProcessed).EndInit();
+            panelResults.ResumeLayout(false);
+            panelResults.PerformLayout();
+            ResumeLayout(false);
 
         }
 
