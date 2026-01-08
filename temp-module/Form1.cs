@@ -490,10 +490,10 @@ namespace temp_module
             // Ghi kết quả vào Excel
             try
             {
-                string excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.xlsx");
+                string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.json");
                 string txtDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "txt");
-                OcrExcelWriter.WriteOcrResult(
-                    excelPath,
+                OcrJsonWriter.WriteOcrResult(
+                    jsonPath,
                     txtDir,
                     _lastImportedImagePath ?? "",
                     totalTime1, totalTime2, totalTime3,
@@ -651,6 +651,56 @@ namespace temp_module
             btnSaveResult.Left = btnImportImage.Right + 10; // Cách phải 10px
             btnSaveResult.Click += btnSaveResult_Click;
             panelControls.Controls.Add(btnSaveResult);
+
+            // Thêm nút import batch
+            var btnImportBatch = new Button();
+            btnImportBatch.Text = "Import TestData";
+            btnImportBatch.Width = btnImportImage.Width;
+            btnImportBatch.Height = btnImportImage.Height;
+            btnImportBatch.Top = btnImportImage.Top;
+            btnImportBatch.Left = btnSaveResult.Right + 10; // Cách phải 10px
+            btnImportBatch.Click += btnImportBatch_Click;
+            panelControls.Controls.Add(btnImportBatch);
+
         }
+
+        // Xử lý sự kiện import batch
+        private void btnImportBatch_Click(object sender, EventArgs e)
+        {
+            string testDataDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestData");
+            if (!Directory.Exists(testDataDir))
+            {
+                MessageBox.Show($"Không tìm thấy thư mục TestData: {testDataDir}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            // Lấy danh sách file ảnh (jpg, png, bmp)
+            var imageFiles = Directory.GetFiles(testDataDir, "*.jpg").ToList();
+            imageFiles.AddRange(Directory.GetFiles(testDataDir, "*.png"));
+            imageFiles.AddRange(Directory.GetFiles(testDataDir, "*.bmp"));
+            if (imageFiles.Count == 0)
+            {
+                MessageBox.Show("Không tìm thấy file ảnh nào trong TestData!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // Import lần lượt từng file
+            foreach (var file in imageFiles)
+            {
+                try
+                {
+                    using (var image = new Bitmap(file))
+                    {
+                        picOriginal.Image = new Bitmap(image);
+                        _lastImportedImagePath = file;
+                        ProcessOCR((Bitmap)picOriginal.Image);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi đọc file ảnh: {file}\n{ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            MessageBox.Show($"Đã import xong {imageFiles.Count} file ảnh từ TestData.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        
     }
 }

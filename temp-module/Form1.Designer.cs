@@ -35,6 +35,7 @@
             comboBoxCameras = new ComboBox();
             label1 = new Label();
             btnSaveResult = new Button();
+            btnImportBatch = new Button();
             splitContainerMain = new SplitContainer();
             splitContainerLeft = new SplitContainer();
             panelOriginal = new Panel();
@@ -349,5 +350,6 @@
         private System.Windows.Forms.TextBox textBoxResults;
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.Button btnSaveResult;
+        private System.Windows.Forms.Button btnImportBatch;
     }
 }

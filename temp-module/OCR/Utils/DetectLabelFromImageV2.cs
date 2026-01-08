@@ -73,6 +73,7 @@ namespace temp_module.OCR.Utils
             string? fileName = null
             )
         {
+            var result = new DetectInfo();
             try
             {
                 sw.Restart();
@@ -105,7 +106,7 @@ namespace temp_module.OCR.Utils
                 frame = compressed;*/ ///*****************************************************************************************************************************************************************
                 originMat = frame.Clone();
 
-                var result = new DetectInfo();
+                
 
                 // ============================================
                 // 1. YOLO DETECTION - Detect trực tiếp trên frame (Mat)
@@ -118,10 +119,12 @@ namespace temp_module.OCR.Utils
                 // 2. VẼ BOUNDING BOXES LÊN FRAME
                 // ============================================
                 using var displayFrame = frame.Clone();
-                result.QRCode = detections.Count.ToString();
                 
                 DetectionResult labelDetection = null;
+                var a = detections.Count;
 
+
+                IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
                 foreach (var detection in detections)
                 {
                     var bbox = detection.BoundingBox;
@@ -135,12 +138,31 @@ namespace temp_module.OCR.Utils
                         new OpenCvSharp.Point(bbox.X, bbox.Y - 5),
                         HersheyFonts.HersheySimplex, 0.6, Scalar.Yellow, 2);
 
+                    // Tô màu vùng contour (nếu có)
+                    
+                    if (detection.Contours != null && detection.Contours.Count > 0)
+                    {
+                        foreach (var contour in detection.Contours)
+                        {
+                            points = contour.Select(p => new OpenCvSharp.Point(p.X, p.Y)).ToArray();
+                            Cv2.FillPoly(displayFrame, new[] { points }, new Scalar(0, 255, 255, 100)); // Màu vàng nhạt, alpha 100
+                        }
+                    }
 
                     if (detection.ClassName.ToLower().Contains("label"))
                     {
                         labelDetection = detection;
                     }
                 }
+
+
+                var displayBmp = MatToBitmap(displayFrame);
+                cameraBox.BeginInvoke(new Action(() =>
+                {
+                    var old = cameraBox.Image;
+                    cameraBox.Image = displayBmp;
+                    old?.Dispose();
+                }));
 
                 if (labelDetection != null)
                 {
@@ -165,8 +187,20 @@ namespace temp_module.OCR.Utils
 
                     }
 
-                    var croptImage = RotationImage.ProcessRotationImage(frame, maskContours); //********************************************************************************************************************
+                    //var croptImage = RotationImage.ProcessRotationImage(frame, maskContours); 
+                    var croptImage = ContourCropper.CropByContour(frame, points);
                     croptYoloMat = croptImage.Clone();
+
+                    var test = MatToBitmap(croptImage);
+                    processImage.BeginInvoke(new Action(() =>
+                    {
+                        var old = processImage.Image;
+                        processImage.Image = test;
+                        old?.Dispose();
+                    }));
+
+
+
 
                     var rotation = RotationImage.CheckLabelRotation(croptImage, rotationDetector);
                     croptImage = RotationImage.Rotate(croptImage, rotation);//*********************************************************************************************************************
@@ -174,27 +208,43 @@ namespace temp_module.OCR.Utils
 
                     var croppedBmp = MatToBitmap(croptImage);
 
-                  
+
+                    //processImage.BeginInvoke(new Action(() =>
+                    //{
+                    //    var old = processImage.Image;
+                    //    processImage.Image = croppedBmp;
+                    //    old?.Dispose();
+                    //}));
+
                     var grayStandard = ImageEnhancer.ConvertToGrayscale(croppedBmp);
 
-                   
+
+                    
+
+
                     try
                     {
                         var enhanced = grayStandard;  // Start with original
+                        //var enhanced = croppedBmp;
 
-
-
+                       
                         // 1️⃣ Tăng sáng (nhà xưởng thường tối)
                         var brightened = ImageEnhancer.EnhanceDark(enhanced, clipLimit: 2.5);
                         if (enhanced != croppedBmp) enhanced.Dispose();
                         enhanced = brightened;
                         Debug.WriteLine($"[ENHANCEMENT] ✓ EnhanceDark completed");
 
+
+                       
+
+
                         // 2️⃣ Làm sắc nét (cải thiện QR detection)
                         var sharpened = ImageEnhancer.SharpenBlurry(enhanced);
                         if (enhanced != croppedBmp) enhanced.Dispose();
                         enhanced = sharpened;
                         Debug.WriteLine($"[ENHANCEMENT] ✓ SharpenBlurry completed");
+
+                        
 
                         // 3️⃣ Upscale nếu ảnh quá nhỏ
                         int minDim = Math.Min(enhanced.Width, enhanced.Height);
@@ -214,12 +264,22 @@ namespace temp_module.OCR.Utils
                         // Dispose original cropped bitmap nếu đã enhance
                         if (enhanced != grayStandard)
                         {
-                            grayStandard.Dispose();
-                            croppedBmp.Dispose();
-                            croppedBmp = enhanced;  // Use enhanced version //********************************************************************************************************************
-                            preProcessImageMat = enhanced.ToMat();
+                          grayStandard.Dispose();
+                          croppedBmp.Dispose();
+                          croppedBmp = enhanced;  // Use enhanced version //********************************************************************************************************************
+                          preProcessImageMat = enhanced.ToMat();
                         }
-                       
+
+
+
+
+                        // if (enhanced != croppedBmp)
+                        // {
+                        //     croppedBmp.Dispose();
+                        //     croppedBmp = enhanced;  // Use enhanced version //********************************************************************************************************************
+                        //     preProcessImageMat = enhanced.ToMat();
+                        // }
+
 
                     }
                     catch (Exception ex)
@@ -230,7 +290,29 @@ namespace temp_module.OCR.Utils
                     }
 
 
+                    //processImage.BeginInvoke(new Action(() =>
+                    //{
+                    //    try
+                    //    {
+                    //        var old = processImage.Image;
+                    //        processImage.Image = croppedBmp;
+                    //        old?.Dispose();
+                    //    }
+                    //    catch (Exception ex)
+                    //    {
+                    //        Debug.WriteLine($"[⚠ DISPLAY PROCESS IMAGE ERROR] {ex.Message}");
+                    //        // If display failed, dispose the clone to prevent memory leak
+                    //        croppedBmp?.Dispose();
+                    //    }
+                    //}));
 
+
+                    //processImage.BeginInvoke(new Action(() =>
+                    //{
+                    //    var old = processImage.Image;
+                    //    processImage.Image = croppedBmp;
+                    //    old?.Dispose();
+                    //}));
 
                     //var (qrPoints, qrText) = LabelDetectorZXing.DetectQRCodeZXing(croppedBmp, zxingReader);
                     var (qrPoints, qrText) = LabelDetectorWeChat.DetectQRCodeWeChat(croppedBmp, weChatQRCode);
@@ -269,7 +351,7 @@ namespace temp_module.OCR.Utils
                             // to prevent "Object is currently in use" error (race condition)
                             var mergedCropClone = (Bitmap)mergedCrop.Clone();
                             
-                            processImage.BeginInvoke(new Action(() =>
+                            /*processImage.BeginInvoke(new Action(() =>
                             {
                                 try
                                 {
@@ -283,7 +365,7 @@ namespace temp_module.OCR.Utils
                                     // If display failed, dispose the clone to prevent memory leak
                                     mergedCropClone?.Dispose();
                                 }
-                            }));
+                            }));*/
                             imageDisplayed = true;
                         }
                         else
@@ -327,13 +409,7 @@ namespace temp_module.OCR.Utils
 
                 }
 
-                var displayBmp = MatToBitmap(displayFrame);
-                cameraBox.BeginInvoke(new Action(() =>
-                {
-                    var old = cameraBox.Image;
-                    cameraBox.Image = displayBmp;
-                    old?.Dispose();
-                }));
+                
 
 
                 originMat?.Dispose();
@@ -368,7 +444,7 @@ namespace temp_module.OCR.Utils
             {
                 Debug.WriteLine($"[⚠ DETECT LABEL V2 ERROR] {ex.Message}");
                 Debug.WriteLine($"[⚠ Stack Trace] {ex.StackTrace}");
-                return null;
+                return result;
             }
         }
 
