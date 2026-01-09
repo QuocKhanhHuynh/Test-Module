@@ -9,7 +9,7 @@ namespace demo_ocr_label
     public static class CropComponent
     {
         // Cắt 2 vùng (góc dưới bên trái + vùng phía trên QR) rồi ghép ảnh lại (KHÔNG OCR)
-        /*public static Bitmap CropAndMergeBottomLeftAndAboveQr(Bitmap aligned, OpenCvSharp.Point[] qrBox)
+        public static Bitmap CropAndMergeBottomLeftAndAboveQr(Bitmap aligned, OpenCvSharp.Point[] qrBox)
         {
             Bitmap bottomLeftCrop = null;
             Bitmap aboveQrCrop = null;
@@ -144,11 +144,11 @@ namespace demo_ocr_label
                 try { aboveQrCrop?.Dispose(); bottomLeftCrop?.Dispose(); mergedCrop?.Dispose(); } catch { }
                 return null;
             }
-        }*/
+        }
 
 
 
-        public static Bitmap CropAndMergeBottomLeftAndAboveQr(Bitmap aligned, OpenCvSharp.Point[] qrBox)
+        /*public static Bitmap CropAndMergeBottomLeftAndAboveQr(Bitmap aligned, OpenCvSharp.Point[] qrBox)
         {
             Bitmap bottomLeftCrop = null;
             Bitmap aboveQrCrop = null;
@@ -275,6 +275,6 @@ namespace demo_ocr_label
                 try { aboveQrCrop?.Dispose(); bottomLeftCrop?.Dispose(); mergedCrop?.Dispose(); } catch { }
                 return null;
             }
-        }
+        }*/
     }
 }

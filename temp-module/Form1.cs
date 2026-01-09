@@ -28,6 +28,9 @@ namespace temp_module
         private VideoCaptureDevice? videoSource;
         private bool isCameraRunning = false;
 
+        // Trạng thái bật/tắt lấy frame OCR
+        private bool _isGetFrameOcrEnabled = false;
+
         // OCR Engines
         private PaddleOCREngine?[] _ocrEngines = new PaddleOCREngine?[3];
         private Yolo11SegOpenVINO?[] _yoloDetectors = new Yolo11SegOpenVINO?[3];
@@ -43,11 +46,38 @@ namespace temp_module
         private Stopwatch sw2 = new Stopwatch();
         private Stopwatch sw3 = new Stopwatch();
 
+        private int numProcessinng = 0;
+        private DetectInfo[] results = new DetectInfo[3];
+
+
+
         public Form1()
         {
             InitializeComponent();
             LoadAvailableCameras();
             InitializeOCREngines();
+            // Khởi tạo trạng thái nút Get Frame OCR
+            btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+            btnGetFrameOcr.BackColor = Color.LightGray;
+            _isGetFrameOcrEnabled = false;
+        }
+        // Sự kiện click cho nút Get Frame OCR
+        private void btnGetFrameOcr_Click(object sender, EventArgs e)
+        {
+            _isGetFrameOcrEnabled = !_isGetFrameOcrEnabled;
+            if (_isGetFrameOcrEnabled)
+            {
+                numProcessinng = 0;
+                results = new DetectInfo[3];
+                textBoxResults.Clear();
+                btnGetFrameOcr.Text = "Get Frame OCR (ON)";
+                btnGetFrameOcr.BackColor = Color.LightGreen;
+            }
+            else
+            {
+                btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+                btnGetFrameOcr.BackColor = Color.LightGray;
+            }
         }
 
         private void LoadAvailableCameras()
@@ -147,26 +177,112 @@ namespace temp_module
                     old?.Dispose();
                 }));
 
-                // Gọi OCR processing (với throttling để tránh lag)
-                if (!_isProcessingFrame && (DateTime.Now - _lastOcrProcessTime).TotalMilliseconds >= MIN_OCR_INTERVAL_MS)
+                // Chỉ lấy frame OCR nếu chế độ được bật
+                if (_isGetFrameOcrEnabled)
                 {
-                    _isProcessingFrame = true;
-                    _lastOcrProcessTime = DateTime.Now;
-
-                    // Clone bitmap và xử lý trong background thread
-                    Bitmap frameToProcess = (Bitmap)bitmap.Clone();
-                    System.Threading.Tasks.Task.Run(() =>
+                    // Gọi OCR processing (với throttling để tránh lag)
+                    /*if (!_isProcessingFrame && (DateTime.Now - _lastOcrProcessTime).TotalMilliseconds >= MIN_OCR_INTERVAL_MS)
                     {
-                        try
+                        _isProcessingFrame = true;
+                        _lastOcrProcessTime = DateTime.Now;
+
+                        // Clone bitmap và xử lý trong background thread
+                        Bitmap frameToProcess = (Bitmap)bitmap.Clone();
+                        System.Threading.Tasks.Task.Run(() =>
                         {
-                            ProcessOCR(frameToProcess);
-                        }
-                        finally
+                            try
+                            {
+                                ProcessOCR(frameToProcess);
+                            }
+                            finally
+                            {
+                                frameToProcess?.Dispose();
+                                _isProcessingFrame = false;
+                            }
+                        });
+                    }*/
+                    
+                    if (numProcessinng < 3)
+                    {
+                        if (numProcessinng == 0)
                         {
-                            frameToProcess?.Dispose();
-                            _isProcessingFrame = false;
+                            numProcessinng++;
+                            Bitmap frameToProcess = null;
+                            if (bitmap != null)
+                            {
+                                frameToProcess = (Bitmap)bitmap.Clone();
+                            }
+                            System.Threading.Tasks.Task.Run(() =>
+                            {
+                                try
+                                {
+                                    results[0] = ProcessOCR1(frameToProcess);
+                                    CheckResult();
+                                }
+                                finally
+                                {
+                                    frameToProcess?.Dispose();
+                                }
+                            });
                         }
-                    });
+                        if (numProcessinng == 1)
+                        {
+                            numProcessinng++;
+                            Bitmap frameToProcess = null;
+                            if (bitmap != null)
+                            {
+                                frameToProcess = (Bitmap)bitmap.Clone();
+                            }
+                            System.Threading.Tasks.Task.Run(() =>
+                            {
+                                try
+                                {
+                                    results[1] = ProcessOCR2(frameToProcess);
+                                    CheckResult();
+                                }
+                                finally
+                                {
+                                    frameToProcess?.Dispose();
+                                }
+                            });
+                        }
+                        if (numProcessinng == 2)
+                        {
+                            numProcessinng++;
+                            _isGetFrameOcrEnabled = false;
+                            // Đảm bảo cập nhật control trên UI thread
+                            if (btnGetFrameOcr.InvokeRequired)
+                            {
+                                btnGetFrameOcr.BeginInvoke(new Action(() =>
+                                {
+                                    btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+                                    btnGetFrameOcr.BackColor = Color.LightGray;
+                                }));
+                            }
+                            else
+                            {
+                                btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+                                btnGetFrameOcr.BackColor = Color.LightGray;
+                            }
+                            Bitmap frameToProcess = null;
+                            if (bitmap != null)
+                            {
+                                frameToProcess = (Bitmap)bitmap.Clone();
+                            }
+                            System.Threading.Tasks.Task.Run(() =>
+                            {
+                                try
+                                {
+                                    results[2] = ProcessOCR3(frameToProcess);
+                                    CheckResult();
+                                }
+                                finally
+                                {
+                                    frameToProcess?.Dispose();
+                                }
+                            });
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -174,6 +290,19 @@ namespace temp_module
                 System.Diagnostics.Debug.WriteLine($"[Camera Error] {ex.Message}");
             }
         }
+
+        private void CheckResult()
+        {
+            if (results[0] != null && results[1] != null && results[2] != null)
+            {
+                DisplayOCRResults(results[0], 1);
+                DisplayOCRResults(results[1], 2);
+                DisplayOCRResults(results[2], 3);
+            }
+        }
+        
+
+        
 
         private void btnImportImage_Click(object sender, EventArgs e)
         {
@@ -373,81 +502,6 @@ namespace temp_module
             DetectInfo result1 = null, result2 = null, result3 = null;
             double totalTime1 = 0, totalTime2 = 0, totalTime3 = 0;
             var mat = BitmapConverter.ToMat(image);
-            try
-            {
-                Mat compressed1 = new Mat();
-                var encodeParams1 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 10) };
-                Cv2.ImEncode(".jpg", mat, out byte[] jpegData1, encodeParams1);
-                compressed1 = Cv2.ImDecode(jpegData1, ImreadModes.Color);
-                sw1.Restart();
-                result1 = DetectLabelFromImageV2.DetectLabel(
-                    workSessionId: 0,
-                    frame: compressed1.Clone(),
-                    yoloDetector: _yoloDetectors[0],
-                    ocr: _ocrEngines[0],
-                    rotationDetector: _rotationDetectors[0],
-                    weChatQRCode: _weChatQRCodes[0],
-                    currentThreshold: 180,
-                    cameraBox: picOriginal,
-                    processImage: picProcessed,
-                    isDebugOcr: false,
-                    fileName: null
-                );
-                totalTime1 = sw1.Elapsed.TotalMilliseconds;
-                this.BeginInvoke(new Action(() =>
-                {
-                    if (result1 != null)
-                        DisplayOCRResults(result1, 1);
-                    else
-                        AppendTextBoxResults($"[Task 1] Không phát hiện được label hoặc QR code.\r\n");
-                }));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[ProcessOCR] Error: {ex.Message}");
-                this.BeginInvoke(new Action(() =>
-                {
-                    AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
-                }));
-            }
-
-            try
-            {
-                Mat compressed2 = new Mat();
-                var encodeParams2 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 50) };
-                Cv2.ImEncode(".jpg", mat, out byte[] jpegData2, encodeParams2);
-                compressed2 = Cv2.ImDecode(jpegData2, ImreadModes.Color);
-                sw2.Restart();
-                result2 = DetectLabelFromImageV2.DetectLabel(
-                    workSessionId: 0,
-                    frame: compressed2.Clone(),
-                    yoloDetector: _yoloDetectors[1],
-                    ocr: _ocrEngines[1],
-                    rotationDetector: _rotationDetectors[1],
-                    weChatQRCode: _weChatQRCodes[1],
-                    currentThreshold: 180,
-                    cameraBox: picOriginal,
-                    processImage: picProcessed,
-                    isDebugOcr: false,
-                    fileName: null
-                );
-                totalTime2 = sw2.Elapsed.TotalMilliseconds;
-                this.BeginInvoke(new Action(() =>
-                {
-                    if (result2 != null)
-                        DisplayOCRResults(result2, 2);
-                    else
-                        AppendTextBoxResults($"[Task 2] Không phát hiện được label hoặc QR code.\r\n");
-                }));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[ProcessOCR] Error: {ex.Message}");
-                this.BeginInvoke(new Action(() =>
-                {
-                    AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
-                }));
-            }
 
             try
             {
@@ -488,7 +542,7 @@ namespace temp_module
             }
 
             // Ghi kết quả vào Excel
-            try
+            /*try
             {
                 string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.json");
                 string txtDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "txt");
@@ -503,6 +557,133 @@ namespace temp_module
             catch (Exception ex)
             {
                 Debug.WriteLine($"[Excel Write] Error: {ex.Message}");
+            }*/
+        }
+
+
+
+        private DetectInfo ProcessOCR1(Bitmap image)
+        {
+            if (image == null)
+            {
+                Debug.WriteLine("[ProcessOCR] Image is null");
+                return null;
+            }
+
+            DetectInfo result;
+            var mat = BitmapConverter.ToMat(image);
+
+            try
+            {
+                Mat compressed3 = new Mat();
+                var encodeParams3 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 100) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
+                compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
+                
+                result = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed3.Clone(),
+                    yoloDetector: _yoloDetectors[0],
+                    ocr: _ocrEngines[0],
+                    rotationDetector: _rotationDetectors[0],
+                    weChatQRCode: _weChatQRCodes[0],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+                Debug.WriteLine($"[ProcessOCR] Error: {ex.Message}");
+                
+            }
+        }
+
+
+
+        private DetectInfo ProcessOCR2(Bitmap image)
+        {
+            if (image == null)
+            {
+                Debug.WriteLine("[ProcessOCR] Image is null");
+                return null;
+            }
+
+            DetectInfo result;
+            var mat = BitmapConverter.ToMat(image);
+
+            try
+            {
+                Mat compressed3 = new Mat();
+                var encodeParams3 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 100) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
+                compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
+
+                result = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed3.Clone(),
+                    yoloDetector: _yoloDetectors[1],
+                    ocr: _ocrEngines[1],
+                    rotationDetector: _rotationDetectors[1],
+                    weChatQRCode: _weChatQRCodes[1],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+                Debug.WriteLine($"[ProcessOCR] Error: {ex.Message}");
+
+            }
+        }
+
+        private DetectInfo ProcessOCR3(Bitmap image)
+        {
+            if (image == null)
+            {
+                Debug.WriteLine("[ProcessOCR] Image is null");
+                return null;
+            }
+
+            DetectInfo result;
+            var mat = BitmapConverter.ToMat(image);
+
+            try
+            {
+                Mat compressed3 = new Mat();
+                var encodeParams3 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 100) };
+                Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
+                compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
+
+                result = DetectLabelFromImageV2.DetectLabel(
+                    workSessionId: 0,
+                    frame: compressed3.Clone(),
+                    yoloDetector: _yoloDetectors[2],
+                    ocr: _ocrEngines[2],
+                    rotationDetector: _rotationDetectors[2],
+                    weChatQRCode: _weChatQRCodes[2],
+                    currentThreshold: 180,
+                    cameraBox: picOriginal,
+                    processImage: picProcessed,
+                    isDebugOcr: false,
+                    fileName: null
+                );
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return null;
+                Debug.WriteLine($"[ProcessOCR] Error: {ex.Message}");
+
             }
         }
 
@@ -674,6 +855,7 @@ namespace temp_module
                 return;
             }
             // Lấy danh sách file ảnh (jpg, png, bmp)
+            
             var imageFiles = Directory.GetFiles(testDataDir, "*.jpg").ToList();
             imageFiles.AddRange(Directory.GetFiles(testDataDir, "*.png"));
             imageFiles.AddRange(Directory.GetFiles(testDataDir, "*.bmp"));

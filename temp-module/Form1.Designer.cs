@@ -36,6 +36,7 @@
             label1 = new Label();
             btnSaveResult = new Button();
             btnImportBatch = new Button();
+            btnGetFrameOcr = new Button();
             splitContainerMain = new SplitContainer();
             splitContainerLeft = new SplitContainer();
             panelOriginal = new Panel();
@@ -72,6 +73,7 @@
             panelControls.Controls.Add(comboBoxCameras);
             panelControls.Controls.Add(label1);
             panelControls.Controls.Add(btnSaveResult);
+            panelControls.Controls.Add(btnGetFrameOcr);
             panelControls.Dock = DockStyle.Top;
             panelControls.Location = new Point(0, 0);
             panelControls.Margin = new Padding(4, 5, 4, 5);
@@ -143,6 +145,17 @@
             btnSaveResult.Text = "Lưu thông tin";
             btnSaveResult.UseVisualStyleBackColor = true;
             btnSaveResult.Click += btnSaveResult_Click;
+
+            // btnGetFrameOcr
+            // 
+            btnGetFrameOcr.Location = new Point(1020, 25);
+            btnGetFrameOcr.Margin = new Padding(4, 5, 4, 5);
+            btnGetFrameOcr.Name = "btnGetFrameOcr";
+            btnGetFrameOcr.Size = new Size(171, 50);
+            btnGetFrameOcr.TabIndex = 6;
+            btnGetFrameOcr.Text = "Get Frame OCR";
+            btnGetFrameOcr.UseVisualStyleBackColor = true;
+            btnGetFrameOcr.Click += btnGetFrameOcr_Click;
             // 
             // splitContainerMain
             // 
@@ -351,5 +364,6 @@
         private System.Windows.Forms.OpenFileDialog openFileDialog;
         private System.Windows.Forms.Button btnSaveResult;
         private System.Windows.Forms.Button btnImportBatch;
+        private System.Windows.Forms.Button btnGetFrameOcr;
     }
 }
