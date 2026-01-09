@@ -371,9 +371,10 @@ namespace temp_module
 
             // ...existing code...
             DetectInfo result1 = null, result2 = null, result3 = null;
+            TimeLineStatictis timeLine = null;
             double totalTime1 = 0, totalTime2 = 0, totalTime3 = 0;
             var mat = BitmapConverter.ToMat(image);
-            try
+            /*try
             {
                 Mat compressed1 = new Mat();
                 var encodeParams1 = new[] { new ImageEncodingParam(ImwriteFlags.JpegQuality, 10) };
@@ -447,7 +448,7 @@ namespace temp_module
                 {
                     AppendTextBoxResults($"Lỗi xử lý OCR: {ex.Message}\r\n");
                 }));
-            }
+            }*/
 
             try
             {
@@ -456,7 +457,7 @@ namespace temp_module
                 Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
                 compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
                 sw3.Restart();
-                result3 = DetectLabelFromImageV2.DetectLabel(
+                (result3, timeLine) = DetectLabelFromImageV2.DetectLabel(
                     workSessionId: 0,
                     frame: compressed3.Clone(),
                     yoloDetector: _yoloDetectors[2],
@@ -488,7 +489,7 @@ namespace temp_module
             }
 
             // Ghi kết quả vào Excel
-            try
+            /*try
             {
                 string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.json");
                 string txtDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "txt");
@@ -503,7 +504,23 @@ namespace temp_module
             catch (Exception ex)
             {
                 Debug.WriteLine($"[Excel Write] Error: {ex.Message}");
+            }*/
+
+            try
+            {
+                string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TimeLine_Result.json");
+                TimeLineJsonWriter.WriteTimeLineResult(
+                    jsonPath,
+                    _lastImportedImagePath,
+                    timeLine,
+                    !string.IsNullOrEmpty(result3.QRCode)
+                );
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Excel Write] Error: {ex.Message}");
+            }
+
         }
 
         /// <summary>

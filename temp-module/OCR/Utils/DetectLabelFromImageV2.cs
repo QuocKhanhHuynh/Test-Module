@@ -17,6 +17,7 @@ using System.Windows.Forms;
 
 using CvSharp = OpenCvSharp;
 using Drawing = System.Drawing;
+using DocumentFormat.OpenXml.Office2013.Excel;
 
 namespace temp_module.OCR.Utils
 {
@@ -59,7 +60,7 @@ namespace temp_module.OCR.Utils
             CannotExtractQRDetails = new ConcurrentBag<string>();
         }
 
-        public static DetectInfo DetectLabel(
+        public static (DetectInfo, TimeLineStatictis) DetectLabel(
             int workSessionId,
             Mat frame,
             Yolo11SegOpenVINO yoloDetector,
@@ -74,6 +75,7 @@ namespace temp_module.OCR.Utils
             )
         {
             var result = new DetectInfo();
+            var timeLine = new TimeLineStatictis();
             try
             {
                 sw.Restart();
@@ -87,7 +89,7 @@ namespace temp_module.OCR.Utils
                 if (frame == null || frame.Empty())
                 {
                     Debug.WriteLine("[⚠] Frame is null or empty");
-                    return null;
+                    return (null, null);
                 }
 
                 /*Mat compressed = new Mat();
@@ -105,13 +107,14 @@ namespace temp_module.OCR.Utils
                 frame.Dispose();
                 frame = compressed;*/ ///*****************************************************************************************************************************************************************
                 originMat = frame.Clone();
-
-                
+                timeLine.GetFrame = sw.ElapsedMilliseconds;
+                sw.Restart();
 
                 // ============================================
                 // 1. YOLO DETECTION - Detect trực tiếp trên frame (Mat)
                 // ============================================
                 var detections = yoloDetector.Detect(frame);
+                timeLine.YoloProcess = sw.ElapsedMilliseconds;
 
               
                 
@@ -121,7 +124,6 @@ namespace temp_module.OCR.Utils
                 using var displayFrame = frame.Clone();
                 
                 DetectionResult labelDetection = null;
-                var a = detections.Count;
 
 
                 IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
@@ -201,9 +203,10 @@ namespace temp_module.OCR.Utils
 
 
 
-
+                    sw.Restart();   
                     var rotation = RotationImage.CheckLabelRotation(croptImage, rotationDetector);
                     croptImage = RotationImage.Rotate(croptImage, rotation);//*********************************************************************************************************************
+                    timeLine.RotationProcess = sw.ElapsedMilliseconds;
                     rotationMat = croptImage.Clone();
 
                     var croppedBmp = MatToBitmap(croptImage);
@@ -215,7 +218,7 @@ namespace temp_module.OCR.Utils
                     //    processImage.Image = croppedBmp;
                     //    old?.Dispose();
                     //}));
-
+                    sw.Restart();
                     var grayStandard = ImageEnhancer.ConvertToGrayscale(croppedBmp);
 
 
@@ -270,7 +273,7 @@ namespace temp_module.OCR.Utils
                           preProcessImageMat = enhanced.ToMat();
                         }
 
-
+                        timeLine.EnhancersProcess = sw.ElapsedMilliseconds;
 
 
                         // if (enhanced != croppedBmp)
@@ -315,7 +318,9 @@ namespace temp_module.OCR.Utils
                     //}));
 
                     //var (qrPoints, qrText) = LabelDetectorZXing.DetectQRCodeZXing(croppedBmp, zxingReader);
+                    sw.Restart();
                     var (qrPoints, qrText) = LabelDetectorWeChat.DetectQRCodeWeChat(croppedBmp, weChatQRCode);
+                    timeLine.QRDetectProcess = sw.ElapsedMilliseconds;
 
                     if (qrPoints == null)
                     {
@@ -323,7 +328,7 @@ namespace temp_module.OCR.Utils
                         CannotExtractQRTimes.Add(timeProcess);
                         CannotExtractQRDetails.Add(fileName);
                         //SaveImageWithStep(2, workSessionId.ToString(), 4, null, originMat, croptYoloMat, rotationMat, preProcessImageMat, null);
-                        return result;
+                        return (result, timeLine);
                     }
 
                     result.QRCode = qrText;
@@ -333,9 +338,12 @@ namespace temp_module.OCR.Utils
                         .ToArray();
 
                     // Gọi hàm với kiểu dữ liệu đã đúng
+                    sw.Restart();
                     var mergedCrop = CropComponent.CropAndMergeBottomLeftAndAboveQr(croppedBmp, qrBox);
+                   
 
                     var gray = ImageEnhancer.ConvertToGrayBgr(mergedCrop);
+                    timeLine.ImageCroptProcess = sw.ElapsedMilliseconds;
                     mergedCrop.Dispose();
                     mergedCrop = gray;//********************************************************************************************************************
                     croptMergeMat = gray.ToMat();
@@ -372,15 +380,17 @@ namespace temp_module.OCR.Utils
                         {
                             Debug.WriteLine("[⚠] processImage is null or handle not created - skipping display");
                         }
-                        
+
+                        sw.Restart();
                         var (ocrTexts, minScore, debugText) = ExtractTextsFromMergedCrop(ocr, mergedCrop);
+                        timeLine.OCRDetectProcess = sw.ElapsedMilliseconds;
                         if (ocrTexts == null || ocrTexts.Count == 0)
                         {
                             var timeOCRProcess = sw.ElapsedMilliseconds;
                             CannotExtractOCRTimes.Add(timeOCRProcess);
                             CannotExtractOCRDetails.Add(fileName);
                             //SaveImageWithStep(2, workSessionId.ToString(), 5, null, originMat, croptYoloMat, rotationMat, preProcessImageMat, croptMergeMat);
-                            return result;
+                            return (result, timeLine);
                         }
                         var timeProcess = sw.ElapsedMilliseconds;
                         SuccessTimes.Add(timeProcess);
@@ -438,13 +448,13 @@ namespace temp_module.OCR.Utils
                 }
 
 
-                return result;
+                return (result, timeLine);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[⚠ DETECT LABEL V2 ERROR] {ex.Message}");
                 Debug.WriteLine($"[⚠ Stack Trace] {ex.StackTrace}");
-                return result;
+                return (result, timeLine);
             }
         }
 

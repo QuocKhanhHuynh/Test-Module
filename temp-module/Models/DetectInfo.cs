@@ -19,4 +19,16 @@ namespace temp_module.Models
                    $"Product Code: {ProductCode}";
         }
     }
+
+
+    public class TimeLineStatictis
+    {
+        public double GetFrame { get; set; }
+        public double YoloProcess { get; set; }
+        public double RotationProcess { get; set; }
+        public double EnhancersProcess { get; set; }
+        public double QRDetectProcess { get; set; }
+        public double ImageCroptProcess { get; set; }
+        public double OCRDetectProcess { get; set; }
+    }
 }
