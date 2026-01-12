@@ -47,6 +47,9 @@ namespace temp_module
         private Stopwatch sw3 = new Stopwatch();
 
         private int numProcessinng = 0;
+        private int countProcessed = 0;
+        private Stopwatch stopwatch = new Stopwatch();
+        private string currentOcrSessionDir = string.Empty;
         private DetectInfo[] results = new DetectInfo[3];
 
 
@@ -68,10 +71,19 @@ namespace temp_module
             if (_isGetFrameOcrEnabled)
             {
                 numProcessinng = 0;
+                countProcessed++;
                 results = new DetectInfo[3];
                 textBoxResults.Clear();
                 btnGetFrameOcr.Text = "Get Frame OCR (ON)";
                 btnGetFrameOcr.BackColor = Color.LightGreen;
+
+                // Tạo thư mục lưu frame cho lần OCR này
+                string imagesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+                if (!Directory.Exists(imagesRoot))
+                    Directory.CreateDirectory(imagesRoot);
+                currentOcrSessionDir = Path.Combine(imagesRoot, countProcessed.ToString());
+                if (!Directory.Exists(currentOcrSessionDir))
+                    Directory.CreateDirectory(currentOcrSessionDir);
             }
             else
             {
@@ -207,10 +219,21 @@ namespace temp_module
                         if (numProcessinng == 0)
                         {
                             numProcessinng++;
+                            stopwatch.Restart();
                             Bitmap frameToProcess = null;
                             if (bitmap != null)
                             {
                                 frameToProcess = (Bitmap)bitmap.Clone();
+                                // Lưu frame ảnh đầu tiên
+                                try
+                                {
+                                    string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_1.jpg");
+                                    frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"[Save Frame1] {ex.Message}");
+                                }
                             }
                             System.Threading.Tasks.Task.Run(() =>
                             {
@@ -224,63 +247,96 @@ namespace temp_module
                                     frameToProcess?.Dispose();
                                 }
                             });
+                            return;
                         }
                         if (numProcessinng == 1)
                         {
-                            numProcessinng++;
-                            Bitmap frameToProcess = null;
-                            if (bitmap != null)
+                            var batchTime = stopwatch.ElapsedMilliseconds;
+                            if (batchTime >= 30)
                             {
-                                frameToProcess = (Bitmap)bitmap.Clone();
+                                numProcessinng++;
+                                stopwatch.Restart();
+                                Bitmap frameToProcess = null;
+                                if (bitmap != null)
+                                {
+                                    frameToProcess = (Bitmap)bitmap.Clone();
+                                    // Lưu frame ảnh thứ 2
+                                    try
+                                    {
+                                        string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_2.jpg");
+                                        frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Debug.WriteLine($"[Save Frame2] {ex.Message}");
+                                    }
+                                }
+                                System.Threading.Tasks.Task.Run(() =>
+                                {
+                                    try
+                                    {
+                                        results[1] = ProcessOCR2(frameToProcess);
+                                        CheckResult();
+                                    }
+                                    finally
+                                    {
+                                        frameToProcess?.Dispose();
+                                    }
+                                });
+                                return;
                             }
-                            System.Threading.Tasks.Task.Run(() =>
-                            {
-                                try
-                                {
-                                    results[1] = ProcessOCR2(frameToProcess);
-                                    CheckResult();
-                                }
-                                finally
-                                {
-                                    frameToProcess?.Dispose();
-                                }
-                            });
                         }
                         if (numProcessinng == 2)
                         {
-                            numProcessinng++;
-                            _isGetFrameOcrEnabled = false;
-                            // Đảm bảo cập nhật control trên UI thread
-                            if (btnGetFrameOcr.InvokeRequired)
+                            var batchTime = stopwatch.ElapsedMilliseconds;
+                            if (batchTime >= 30)
                             {
-                                btnGetFrameOcr.BeginInvoke(new Action(() =>
+                                numProcessinng++;
+                                stopwatch.Restart();
+                                _isGetFrameOcrEnabled = false;
+                                // Đảm bảo cập nhật control trên UI thread
+                                if (btnGetFrameOcr.InvokeRequired)
+                                {
+                                    btnGetFrameOcr.BeginInvoke(new Action(() =>
+                                    {
+                                        btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+                                        btnGetFrameOcr.BackColor = Color.LightGray;
+                                    }));
+                                }
+                                else
                                 {
                                     btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
                                     btnGetFrameOcr.BackColor = Color.LightGray;
-                                }));
-                            }
-                            else
-                            {
-                                btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-                                btnGetFrameOcr.BackColor = Color.LightGray;
-                            }
-                            Bitmap frameToProcess = null;
-                            if (bitmap != null)
-                            {
-                                frameToProcess = (Bitmap)bitmap.Clone();
-                            }
-                            System.Threading.Tasks.Task.Run(() =>
-                            {
-                                try
-                                {
-                                    results[2] = ProcessOCR3(frameToProcess);
-                                    CheckResult();
                                 }
-                                finally
+                                Bitmap frameToProcess = null;
+                                if (bitmap != null)
                                 {
-                                    frameToProcess?.Dispose();
+                                    frameToProcess = (Bitmap)bitmap.Clone();
+                                    // Lưu frame ảnh thứ 3
+                                    try
+                                    {
+                                        string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_3.jpg");
+                                        frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Debug.WriteLine($"[Save Frame3] {ex.Message}");
+                                    }
                                 }
-                            });
+                                System.Threading.Tasks.Task.Run(() =>
+                                {
+                                    try
+                                    {
+                                        results[2] = ProcessOCR3(frameToProcess);
+                                        CheckResult();
+                                    }
+                                    finally
+                                    {
+                                        frameToProcess?.Dispose();
+                                    }
+                                });
+                                return;
+                            }
                         }
                     }
                 }
