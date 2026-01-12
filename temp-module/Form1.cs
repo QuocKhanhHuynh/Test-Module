@@ -49,6 +49,8 @@ namespace temp_module
         private int numProcessinng = 0;
         private int countProcessed = 0;
         private Stopwatch stopwatch = new Stopwatch();
+        private Stopwatch totalStopwatch = new Stopwatch();
+         private Stopwatch stopwatchAllowGetFrame = new Stopwatch();
         private string currentOcrSessionDir = string.Empty;
         private DetectInfo[] results = new DetectInfo[3];
 
@@ -72,7 +74,12 @@ namespace temp_module
             {
                 numProcessinng = 0;
                 countProcessed++;
+                stopwatchAllowGetFrame.Restart();
                 results = new DetectInfo[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    results[i] = new DetectInfo();
+                }
                 textBoxResults.Clear();
                 btnGetFrameOcr.Text = "Get Frame OCR (ON)";
                 btnGetFrameOcr.BackColor = Color.LightGreen;
@@ -179,6 +186,7 @@ namespace temp_module
         {
             try
             {
+               
                 Bitmap bitmap = (Bitmap)eventArgs.Frame.Clone();
 
                 // Hiển thị frame trên UI thread
@@ -189,9 +197,16 @@ namespace temp_module
                     old?.Dispose();
                 }));
 
+                
+
                 // Chỉ lấy frame OCR nếu chế độ được bật
                 if (_isGetFrameOcrEnabled)
                 {
+                    var timeAllowed = stopwatchAllowGetFrame.ElapsedMilliseconds;
+                    if (timeAllowed < 2000)
+                    {
+                        return;
+                    }
                     // Gọi OCR processing (với throttling để tránh lag)
                     /*if (!_isProcessingFrame && (DateTime.Now - _lastOcrProcessTime).TotalMilliseconds >= MIN_OCR_INTERVAL_MS)
                     {
@@ -218,16 +233,19 @@ namespace temp_module
                     {
                         if (numProcessinng == 0)
                         {
+                            totalStopwatch.Restart();
                             numProcessinng++;
                             stopwatch.Restart();
                             Bitmap frameToProcess = null;
+                            string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_1.jpg");
                             if (bitmap != null)
                             {
                                 frameToProcess = (Bitmap)bitmap.Clone();
                                 // Lưu frame ảnh đầu tiên
                                 try
                                 {
-                                    string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_1.jpg");
+                                    
+                                   
                                     frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
                                 }
                                 catch (Exception ex)
@@ -240,6 +258,8 @@ namespace temp_module
                                 try
                                 {
                                     results[0] = ProcessOCR1(frameToProcess);
+                                    results[0].ImagePath = imgPath;
+                                   
                                     CheckResult();
                                 }
                                 finally
@@ -257,13 +277,15 @@ namespace temp_module
                                 numProcessinng++;
                                 stopwatch.Restart();
                                 Bitmap frameToProcess = null;
+                                string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_2.jpg");
                                 if (bitmap != null)
                                 {
                                     frameToProcess = (Bitmap)bitmap.Clone();
                                     // Lưu frame ảnh thứ 2
                                     try
                                     {
-                                        string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_2.jpg");
+                                       
+                                       
                                         frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
                                     }
                                     catch (Exception ex)
@@ -276,6 +298,7 @@ namespace temp_module
                                     try
                                     {
                                         results[1] = ProcessOCR2(frameToProcess);
+                                        results[1].ImagePath = imgPath;
                                         CheckResult();
                                     }
                                     finally
@@ -309,13 +332,15 @@ namespace temp_module
                                     btnGetFrameOcr.BackColor = Color.LightGray;
                                 }
                                 Bitmap frameToProcess = null;
+                                string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_3.jpg");
                                 if (bitmap != null)
                                 {
                                     frameToProcess = (Bitmap)bitmap.Clone();
                                     // Lưu frame ảnh thứ 3
                                     try
                                     {
-                                        string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_3.jpg");
+                                        
+                                       
                                         frameToProcess.Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
                                     }
                                     catch (Exception ex)
@@ -328,6 +353,8 @@ namespace temp_module
                                     try
                                     {
                                         results[2] = ProcessOCR3(frameToProcess);
+                                        results[2].ImagePath = imgPath;
+                                        
                                         CheckResult();
                                     }
                                     finally
@@ -354,6 +381,60 @@ namespace temp_module
                 DisplayOCRResults(results[0], 1);
                 DisplayOCRResults(results[1], 2);
                 DisplayOCRResults(results[2], 3);
+
+                var totalTime = totalStopwatch.ElapsedMilliseconds;
+
+                // Build JSON result object
+                var sessionResult = new
+                {
+                    countProcessed = this.countProcessed,
+                    totalTimeProcess = totalTime,
+                    frameT = new {
+                        imagePath = results[0]?.ImagePath,
+                        processTimeFrame = results[0]?.TimeProcess,
+                        qrDetected = results[0]?.QRCode != null,
+                        qrCodeValue = results[0]?.QRCode,
+                        totalValue = results[0]?.ProductTotal,
+                        productCodeValue = results[0]?.ProductCode,
+                        sizeValue = results[0]?.Size,
+                        colorValue = results[0]?.Color,
+                    },
+                    frameT1 = new {
+                        imagePath = results[1]?.ImagePath,
+                        processTimeFrame = results[1]?.TimeProcess,
+                        qrDetected = results[1]?.QRCode != null,
+                        qrCodeValue = results[1]?.QRCode,
+                        totalValue = results[1]?.ProductTotal,
+                        productCodeValue = results[1]?.ProductCode,
+                        sizeValue = results[1]?.Size,
+                        colorValue = results[1]?.Color,
+                    },
+                    frameT2 = new {
+                        imagePath = results[2]?.ImagePath,
+                        processTimeFrame = results[2]?.TimeProcess,
+                        qrDetected = results[2]?.QRCode != null,
+                        qrCodeValue = results[2]?.QRCode,
+                        totalValue = results[2]?.ProductTotal,
+                        productCodeValue = results[2]?.ProductCode,
+                        sizeValue = results[2]?.Size,
+                        colorValue = results[2]?.Color,
+                    }
+                };
+
+                try
+                {
+                    string json = System.Text.Json.JsonSerializer.Serialize(new[] { sessionResult }, new System.Text.Json.JsonSerializerOptions {
+                        WriteIndented = true,
+                        // Handle possible cycles or custom converters if needed
+                        // ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+                    });
+                    string jsonPath = System.IO.Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory), "ocr_result_t.json");
+                    System.IO.File.WriteAllText(jsonPath, json);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Save JSON] {ex.Message}");
+                }
             }
         }
         
@@ -636,6 +717,7 @@ namespace temp_module
                 Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
                 compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
                 
+                sw1.Restart();
                 result = DetectLabelFromImageV2.DetectLabel(
                     workSessionId: 0,
                     frame: compressed3.Clone(),
@@ -649,6 +731,7 @@ namespace temp_module
                     isDebugOcr: false,
                     fileName: null
                 );
+                result.TimeProcess = sw1.ElapsedMilliseconds;
                 return result;
             }
             catch (Exception ex)
@@ -679,6 +762,7 @@ namespace temp_module
                 Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
                 compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
 
+                sw2.Restart();
                 result = DetectLabelFromImageV2.DetectLabel(
                     workSessionId: 0,
                     frame: compressed3.Clone(),
@@ -692,6 +776,7 @@ namespace temp_module
                     isDebugOcr: false,
                     fileName: null
                 );
+                result.TimeProcess = sw2.ElapsedMilliseconds;
                 return result;
             }
             catch (Exception ex)
@@ -720,6 +805,7 @@ namespace temp_module
                 Cv2.ImEncode(".jpg", mat, out byte[] jpegData3, encodeParams3);
                 compressed3 = Cv2.ImDecode(jpegData3, ImreadModes.Color);
 
+                sw3.Restart();
                 result = DetectLabelFromImageV2.DetectLabel(
                     workSessionId: 0,
                     frame: compressed3.Clone(),
@@ -733,6 +819,7 @@ namespace temp_module
                     isDebugOcr: false,
                     fileName: null
                 );
+                result.TimeProcess = sw3.ElapsedMilliseconds;
                 return result;
             }
             catch (Exception ex)

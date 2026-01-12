@@ -9,6 +9,8 @@ namespace temp_module.Models
         public string? ProductTotal { get; set; }
         public string? Color { get; set; }
         public string? ProductCode { get; set; }
+        public double? TimeProcess { get; set; }
+        public string? ImagePath { get; set; }
 
         public override string ToString()
         {
