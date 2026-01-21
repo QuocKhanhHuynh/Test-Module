@@ -76,10 +76,10 @@ namespace temp_module
                 countProcessed++;
                 stopwatchAllowGetFrame.Restart();
                 results = new DetectInfo[3];
-                for (int i = 0; i < 3; i++)
+                /*for (int i = 0; i < 3; i++)
                 {
                     results[i] = new DetectInfo();
-                }
+                }*/
                 textBoxResults.Clear();
                 btnGetFrameOcr.Text = "Get Frame OCR (ON)";
                 btnGetFrameOcr.BackColor = Color.LightGreen;
@@ -196,8 +196,14 @@ namespace temp_module
                     picOriginal.Image = bitmap;
                     old?.Dispose();
                 }));
-
-                
+                /*if (_isGetFrameOcrEnabled)
+                {
+                    var frameToProcess = (Bitmap)bitmap.Clone();
+                    ProcessOCR(frameToProcess);
+                    _isGetFrameOcrEnabled = false;
+                    btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
+                    btnGetFrameOcr.BackColor = Color.LightGray;
+                }*/
 
                 // Chỉ lấy frame OCR nếu chế độ được bật
                 if (_isGetFrameOcrEnabled)
@@ -207,27 +213,7 @@ namespace temp_module
                     {
                         return;
                     }
-                    // Gọi OCR processing (với throttling để tránh lag)
-                    /*if (!_isProcessingFrame && (DateTime.Now - _lastOcrProcessTime).TotalMilliseconds >= MIN_OCR_INTERVAL_MS)
-                    {
-                        _isProcessingFrame = true;
-                        _lastOcrProcessTime = DateTime.Now;
-
-                        // Clone bitmap và xử lý trong background thread
-                        Bitmap frameToProcess = (Bitmap)bitmap.Clone();
-                        System.Threading.Tasks.Task.Run(() =>
-                        {
-                            try
-                            {
-                                ProcessOCR(frameToProcess);
-                            }
-                            finally
-                            {
-                                frameToProcess?.Dispose();
-                                _isProcessingFrame = false;
-                            }
-                        });
-                    }*/
+                    
                     
                     if (numProcessinng < 3)
                     {
@@ -423,12 +409,35 @@ namespace temp_module
 
                 try
                 {
-                    string json = System.Text.Json.JsonSerializer.Serialize(new[] { sessionResult }, new System.Text.Json.JsonSerializerOptions {
+                    string jsonPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ocr_result_t.json");
+                    System.Collections.Generic.List<object> resultList = new System.Collections.Generic.List<object>();
+                    if (System.IO.File.Exists(jsonPath))
+                    {
+                        try
+                        {
+                            string existingJson = System.IO.File.ReadAllText(jsonPath);
+                            if (!string.IsNullOrWhiteSpace(existingJson))
+                            {
+                                var existingArray = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonArray>(existingJson);
+                                if (existingArray != null)
+                                {
+                                    foreach (var item in existingArray)
+                                    {
+                                        resultList.Add(item);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[Read JSON] {ex.Message}");
+                        }
+                    }
+                    resultList.Add(sessionResult);
+                    string json = System.Text.Json.JsonSerializer.Serialize(resultList, new System.Text.Json.JsonSerializerOptions
+                    {
                         WriteIndented = true,
-                        // Handle possible cycles or custom converters if needed
-                        // ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
                     });
-                    string jsonPath = System.IO.Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory), "ocr_result_t.json");
                     System.IO.File.WriteAllText(jsonPath, json);
                 }
                 catch (Exception ex)
@@ -661,13 +670,7 @@ namespace temp_module
                     fileName: null
                 );
                 totalTime3 = sw3.Elapsed.TotalMilliseconds;
-                this.BeginInvoke(new Action(() =>
-                {
-                    if (result3 != null)
-                        DisplayOCRResults(result3, 3);
-                    else
-                        AppendTextBoxResults($"[Task 3] Không phát hiện được label hoặc QR code.\r\n");
-                }));
+                
             }
             catch (Exception ex)
             {
