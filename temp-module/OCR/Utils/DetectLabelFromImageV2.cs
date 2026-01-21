@@ -3,7 +3,6 @@ using temp_module.Models;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using OpenCvSharp.Text;
-using PaddleOCRSharp;
 using Sdcb.RotationDetector;
 using System;
 using System.Collections.Concurrent;
@@ -14,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using temp_module.OCR.Utils.NewOCR;
 
 using CvSharp = OpenCvSharp;
 using Drawing = System.Drawing;
@@ -63,7 +63,7 @@ namespace temp_module.OCR.Utils
             int workSessionId,
             Mat frame,
             Yolo11SegOpenVINO yoloDetector,
-            PaddleOCREngine ocr,
+            PaddleOCROpenVINO ocr,
              PaddleRotationDetector rotationDetector,
              WeChatQRCode weChatQRCode,
             int currentThreshold,
@@ -192,12 +192,12 @@ namespace temp_module.OCR.Utils
                     croptYoloMat = croptImage.Clone();
 
                     var test = MatToBitmap(croptImage);
-                    processImage.BeginInvoke(new Action(() =>
+                    /*processImage.BeginInvoke(new Action(() =>
                     {
                         var old = processImage.Image;
                         processImage.Image = test;
                         old?.Dispose();
-                    }));
+                    }));*/
 
 
 
@@ -373,7 +373,7 @@ namespace temp_module.OCR.Utils
                             Debug.WriteLine("[⚠] processImage is null or handle not created - skipping display");
                         }
                         
-                        var (ocrTexts, minScore, debugText) = ExtractTextsFromMergedCrop(ocr, mergedCrop);
+                        var (ocrTexts, minScore, debugText) = ExtractTextsFromMergedCrop(ocr, mergedCrop, processImage);
                         if (ocrTexts == null || ocrTexts.Count == 0)
                         {
                             var timeOCRProcess = sw.ElapsedMilliseconds;
@@ -388,10 +388,10 @@ namespace temp_module.OCR.Utils
                         // (UI thread has its own clone if display succeeded)
                         mergedCrop.Dispose();
 
-                        result.ProductTotal = ocrTexts[0];
-                        result.ProductCode = ocrTexts[1];
-                        result.Size = ocrTexts[2];
-                        result.Color = ocrTexts[3];
+                        if (ocrTexts.Count > 0) result.ProductTotal = ocrTexts[0];
+                        if (ocrTexts.Count > 1) result.ProductCode = ocrTexts[1];
+                        if (ocrTexts.Count > 2) result.Size = ocrTexts[2];
+                        if (ocrTexts.Count > 3) result.Color = ocrTexts[3];
 
                         if (result.ProductTotal == null || result.ProductCode == null || result.Size == null || result.Color == null)
                         {
@@ -449,7 +449,7 @@ namespace temp_module.OCR.Utils
         }
 
 
-        public static (List<string> texts, float minScore, string DebugText) ExtractTextsFromMergedCrop(PaddleOCREngine ocr, Bitmap mergedCrop)
+        public static (List<string> texts, float minScore, string DebugText) ExtractTextsFromMergedCrop(PaddleOCROpenVINO ocr, Bitmap mergedCrop, PictureBox pictureBox)
         {
             var texts = new List<string>();
             string DebugText = "";
@@ -460,24 +460,26 @@ namespace temp_module.OCR.Utils
                 if (ocr == null || mergedCrop == null)
                     return (texts, -999, "[?] Input null");
 
-                OCRResult result;
+                List<OCRResult> results;
                 lock (ocr)
                 {
-                    result = ocr.DetectText(mergedCrop);
+                    // Convert Bitmap to Mat for PaddleOCROpenVINO
+                    using var mat = mergedCrop.ToMat();
+                    results = ocr.DetectText(mat, pictureBox);
                 }
 
-                if (result?.TextBlocks?.Count > 0)
+                if (results?.Count > 0)
                 {
-                    texts = result.TextBlocks
-                        .Where(tb => !string.IsNullOrWhiteSpace(tb.Text))
-                        .Select(tb => tb.Text.Trim())
+                    texts = results
+                        .Where(r => !string.IsNullOrWhiteSpace(r.Text))
+                        .Select(r => r.Text.Trim())
                         .ToList();
 
-                    foreach (var tb in result.TextBlocks)
+                    foreach (var r in results)
                     {
-                        if (tb.Score < minScore)
-                            minScore = tb.Score;
-                        DebugText += $"{tb.Text?.Trim()} | Score: {tb.Score * 100:F2}%\r\n";
+                        if (r.Score < minScore)
+                            minScore = r.Score;
+                        DebugText += $"{r.Text?.Trim()} | Score: {r.Score * 100:F2}%\r\n";
                     }
                 }
 

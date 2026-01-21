@@ -1,5 +1,4 @@
 using OpenCvSharp;
-using PaddleOCRSharp;
 using System;
 using System.Diagnostics;
 using System.Drawing.Imaging;

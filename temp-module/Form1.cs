@@ -4,7 +4,6 @@ using demo_ocr_label;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using OpenCvSharp.Text;
-using PaddleOCRSharp;
 using Sdcb.RotationDetector;
 using System;
 using System.Diagnostics;
@@ -15,6 +14,7 @@ using System.Linq;
 using System.Windows.Forms;
 using temp_module.Models;
 using temp_module.OCR.Utils;
+using temp_module.OCR.Utils.NewOCR;
 
 
 namespace temp_module
@@ -32,7 +32,7 @@ namespace temp_module
         private bool _isGetFrameOcrEnabled = false;
 
         // OCR Engines
-        private PaddleOCREngine?[] _ocrEngines = new PaddleOCREngine?[3];
+        private PaddleOCROpenVINO?[] _ocrEngines = new PaddleOCROpenVINO?[3];
         private Yolo11SegOpenVINO?[] _yoloDetectors = new Yolo11SegOpenVINO?[3];
         private PaddleRotationDetector?[] _rotationDetectors = new PaddleRotationDetector?[3];
         private WeChatQRCode?[] _weChatQRCodes = new WeChatQRCode?[3];
@@ -494,46 +494,48 @@ namespace temp_module
         }
 
         /// <summary>
-        /// Khởi tạo PaddleOCREngine
+        /// Khởi tạo PaddleOCROpenVINO engine
         /// </summary>
-        private PaddleOCREngine? InitializeOCREngine()
+        private PaddleOCROpenVINO? InitializeOCREngine()
         {
             try
             {
-                if (utils.fileConfig?.modelParams == null)
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string detModel = Path.Combine(baseDir, "models", "det", "PP-OCRv5_mobile_det_infer.onnx");
+                string recModel = Path.Combine(baseDir, "models", "rec", "rec.xml");
+                string charDict = Path.Combine(baseDir, "fonts", "dictv5.txt");
+
+                // Check if files exist
+                if (!File.Exists(detModel))
                 {
-                    Debug.WriteLine("[OCR] Config not found, using default parameters");
-                    return new PaddleOCREngine();
+                    Debug.WriteLine($"[OCR] Detection model not found: {detModel}");
+                    return null;
+                }
+                if (!File.Exists(recModel))
+                {
+                    Debug.WriteLine($"[OCR] Recognition model not found: {recModel}");
+                    return null;
+                }
+                if (!File.Exists(charDict))
+                {
+                    Debug.WriteLine($"[OCR] Character dictionary not found: {charDict}");
+                    return null;
                 }
 
-                var modelParams = utils.fileConfig.modelParams;
-
-                var ocrParams = new OCRParameter
+                var config = new OCRConfig
                 {
-                    det = modelParams.det,
-                    rec = modelParams.rec,
-                    cls = modelParams.cls,
-                    use_angle_cls = modelParams.use_angle_cls,
-                    det_db_thresh = modelParams.det_db_thresh,
-                    det_db_box_thresh = modelParams.det_db_box_thresh,
-                    det_db_unclip_ratio = modelParams.det_db_unclip_ratio,
-                    max_side_len = modelParams.det_limit_side_len,
-                    det_db_score_mode = modelParams.det_db_score_mode,
-                    cpu_math_library_num_threads = modelParams.cpu_math_library_num_threads,
-                    enable_mkldnn = modelParams.enable_mkldnn
+                    DetThresh = 0.15f,
+                    DetBoxThresh = 0.15f,
+                    DetUnclipRatio = 2.0f,
+                    RecBatchSize = 6,
+                    NumThreads = 4,
+                    NumStreams = 1,
+                    Device = "CPU"
                 };
 
-                try
-                {
-                    var engine = new PaddleOCREngine(null, ocrParams);
-                    Debug.WriteLine("[OCR] PaddleOCREngine initialized successfully");
-                    return engine;
-                }
-                catch (DllNotFoundException)
-                {
-                    Debug.WriteLine("[OCR] PaddleOCR DLL not found, using default constructor");
-                    return new PaddleOCREngine();
-                }
+                var engine = new PaddleOCROpenVINO(detModel, recModel, charDict, config);
+                Debug.WriteLine("[OCR] PaddleOCROpenVINO initialized successfully");
+                return engine;
             }
             catch (Exception ex)
             {
@@ -670,7 +672,10 @@ namespace temp_module
                     fileName: null
                 );
                 totalTime3 = sw3.Elapsed.TotalMilliseconds;
-                
+
+                DisplayOCRResults(result3, 3);
+
+
             }
             catch (Exception ex)
             {
