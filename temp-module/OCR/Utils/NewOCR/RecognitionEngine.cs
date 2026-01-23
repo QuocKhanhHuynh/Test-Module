@@ -66,7 +66,7 @@ namespace temp_module.OCR.Utils.NewOCR
             {
                 int batchEnd = Math.Min(i + _batchSize, n);
                 int currentBatchSize = batchEnd - i;
-                
+
                 // Get batch crops based on sorted indices
                 List<Mat> batchCrops = new List<Mat>();
                 List<int> batchOriginalIndices = new List<int>();
@@ -114,8 +114,13 @@ namespace temp_module.OCR.Utils.NewOCR
             int outputSize = (int)outputTensor.get_size();
             float[] output = outputTensor.get_data<float>(outputSize);
 
+            // Get num_classes from output tensor shape (not from dictionary!)
+            // Model output shape: [batch, time_steps, num_classes]
+            var outputShape = outputTensor.get_shape();
+            int numClasses = (int)outputShape[2];  // = 438 for PP-OCRv5
+
             // Decode CTC
-            return DecodeCTC(output, batchSize);
+            return DecodeCTC(output, batchSize, numClasses);
         }
 
         /// <summary>
@@ -175,7 +180,7 @@ namespace temp_module.OCR.Utils.NewOCR
                                     // This maps [0, 255] → [-1, 1]
                                     float pixel = srcPtr[(h * cropW + w) * 3 + c] / 255.0f;
                                     pixel = (pixel - 0.5f) / 0.5f;
-                                    
+
                                     batchData[offset + c * _imageHeight * maxW + h * maxW + w] = pixel;
                                 }
                                 else
@@ -198,13 +203,17 @@ namespace temp_module.OCR.Utils.NewOCR
         /// <summary>
         /// Decode CTC output to text strings.
         /// </summary>
-        private (List<string>, List<float>) DecodeCTC(float[] output, int batchSize)
+        /// <param name="output">Model output array</param>
+        /// <param name="batchSize">Batch size</param>
+        /// <param name="numClasses">Number of classes from model (438 for PP-OCRv5)</param>
+        private (List<string>, List<float>) DecodeCTC(float[] output, int batchSize, int numClasses)
         {
             List<string> texts = new List<string>();
             List<float> scores = new List<float>();
 
             // Output shape: [batch, time_steps, num_classes]
-            int timeSteps = output.Length / (batchSize * _characters.Count);
+            // IMPORTANT: Use numClasses from model, not _characters.Count!
+            int timeSteps = output.Length / (batchSize * numClasses);
 
             for (int b = 0; b < batchSize; b++)
             {
@@ -219,9 +228,10 @@ namespace temp_module.OCR.Utils.NewOCR
                     float maxProb = float.MinValue;
                     int maxIndex = 0;
 
-                    for (int c = 0; c < _characters.Count; c++)
+                    // Loop through ALL model classes (numClasses), not just dictionary size
+                    for (int c = 0; c < numClasses; c++)
                     {
-                        int idx = b * timeSteps * _characters.Count + t * _characters.Count + c;
+                        int idx = b * timeSteps * numClasses + t * numClasses + c;
                         float prob = output[idx];
 
                         if (prob > maxProb)
@@ -244,12 +254,12 @@ namespace temp_module.OCR.Utils.NewOCR
                 }
 
                 // Convert indices to text
-                string text = string.Join("", indices.Select(i => 
+                string text = string.Join("", indices.Select(i =>
                     i < _characters.Count ? _characters[i] : "?"));
 
                 // Calculate average confidence
-                float avgScore = confidences.Count > 0 
-                    ? confidences.Average() 
+                float avgScore = confidences.Count > 0
+                    ? confidences.Average()
                     : 0f;
 
                 texts.Add(text);

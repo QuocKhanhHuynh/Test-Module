@@ -639,6 +639,7 @@ namespace temp_module
         /// </summary>
         private void ProcessOCR(Bitmap image)
         {
+            var a = _rotationDetectors;
             if (image == null)
             {
                 Debug.WriteLine("[ProcessOCR] Image is null");
@@ -661,10 +662,10 @@ namespace temp_module
                 result3 = DetectLabelFromImageV2.DetectLabel(
                     workSessionId: 0,
                     frame: compressed3.Clone(),
-                    yoloDetector: _yoloDetectors[2],
-                    ocr: _ocrEngines[2],
-                    rotationDetector: _rotationDetectors[2],
-                    weChatQRCode: _weChatQRCodes[2],
+                    yoloDetector: _yoloDetectors[0],
+                    ocr: _ocrEngines[0],
+                    rotationDetector: _rotationDetectors[0],
+                    weChatQRCode: _weChatQRCodes[0],
                     currentThreshold: 180,
                     cameraBox: picOriginal,
                     processImage: picProcessed,
