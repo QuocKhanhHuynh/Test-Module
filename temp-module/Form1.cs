@@ -1,6 +1,7 @@
 using AForge.Video;
 using AForge.Video.DirectShow;
 using demo_ocr_label;
+using DocumentFormat.OpenXml.Wordprocessing;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using OpenCvSharp.Text;
@@ -55,6 +56,16 @@ namespace temp_module
         private DetectInfo[] results = new DetectInfo[3];
 
 
+        private IEnumerable<OpenCvSharp.Point> yoloPoints = null;
+        private string wechatQrTexts = null;
+        private Point2f[] wechatQrPoints = null;
+        private Bitmap frame1 = null;
+        private Bitmap frame2 = null;
+        private Bitmap frame3 = null;
+
+
+        private bool flagProcess = true;
+
 
         public Form1()
         {
@@ -63,7 +74,7 @@ namespace temp_module
             InitializeOCREngines();
             // Khởi tạo trạng thái nút Get Frame OCR
             btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-            btnGetFrameOcr.BackColor = Color.LightGray;
+            btnGetFrameOcr.BackColor = System.Drawing.Color.LightGray;
             _isGetFrameOcrEnabled = false;
         }
         // Sự kiện click cho nút Get Frame OCR
@@ -82,7 +93,7 @@ namespace temp_module
                 }*/
                 textBoxResults.Clear();
                 btnGetFrameOcr.Text = "Get Frame OCR (ON)";
-                btnGetFrameOcr.BackColor = Color.LightGreen;
+                btnGetFrameOcr.BackColor = System.Drawing.Color.LightGreen;
 
                 // Tạo thư mục lưu frame cho lần OCR này
                 string imagesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
@@ -95,7 +106,7 @@ namespace temp_module
             else
             {
                 btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-                btnGetFrameOcr.BackColor = Color.LightGray;
+                btnGetFrameOcr.BackColor = System.Drawing.Color.LightGray;
             }
         }
 
@@ -182,7 +193,7 @@ namespace temp_module
             picOriginal.Image = null;
         }
 
-        private void VideoSource_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        /*private void VideoSource_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
             try
             {
@@ -196,14 +207,7 @@ namespace temp_module
                     picOriginal.Image = bitmap;
                     old?.Dispose();
                 }));
-                /*if (_isGetFrameOcrEnabled)
-                {
-                    var frameToProcess = (Bitmap)bitmap.Clone();
-                    ProcessOCR(frameToProcess);
-                    _isGetFrameOcrEnabled = false;
-                    btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-                    btnGetFrameOcr.BackColor = Color.LightGray;
-                }*/
+                
 
                 // Chỉ lấy frame OCR nếu chế độ được bật
                 if (_isGetFrameOcrEnabled)
@@ -309,13 +313,13 @@ namespace temp_module
                                     btnGetFrameOcr.BeginInvoke(new Action(() =>
                                     {
                                         btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-                                        btnGetFrameOcr.BackColor = Color.LightGray;
+                                        btnGetFrameOcr.BackColor = System.Drawing.Color.LightGray;
                                     }));
                                 }
                                 else
                                 {
                                     btnGetFrameOcr.Text = "Get Frame OCR (OFF)";
-                                    btnGetFrameOcr.BackColor = Color.LightGray;
+                                    btnGetFrameOcr.BackColor = System.Drawing.Color.LightGray;
                                 }
                                 Bitmap frameToProcess = null;
                                 string imgPath = Path.Combine(currentOcrSessionDir, $"{countProcessed}_attempt-frame_3.jpg");
@@ -357,6 +361,133 @@ namespace temp_module
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[Camera Error] {ex.Message}");
+            }
+        }*/
+
+        private void VideoSource_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+            try
+            {
+                // Clone original frame from camera
+                Bitmap originalBitmap = (Bitmap)eventArgs.Frame.Clone();
+
+                // Clone separate bitmap for UI display to avoid race condition
+                Bitmap displayBitmap = (Bitmap)originalBitmap.Clone();
+
+                // Hiển thị frame trên UI thread
+                picOriginal?.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        var old = picOriginal.Image;
+                        picOriginal.Image = displayBitmap;
+                        old?.Dispose();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Control đã bị dispose, cleanup bitmap
+                        displayBitmap?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        displayBitmap?.Dispose();
+                    }
+                }));
+
+
+
+
+                if (numProcessinng < 3)
+                {
+
+                    if (numProcessinng == 0)
+                    {
+
+                        numProcessinng++;
+                        stopwatch.Restart();
+
+                        if (originalBitmap != null)
+                        {
+                            try
+                            {
+                                frame1 = (Bitmap)originalBitmap.Clone();
+                            }
+                            catch (Exception ex)
+                            {
+                                numProcessinng = 0;
+                                originalBitmap?.Dispose();
+                                return;
+                            }
+                        }
+                        System.Threading.Tasks.Task.Run(() =>
+                        {
+                            try
+                            {
+                                results[0] = ProcessOCR1(frame1);
+
+                                CheckResult();
+                            }
+                            finally
+                            {
+                                frame1?.Dispose();
+                            }
+                        });
+                        originalBitmap?.Dispose();
+                        return;
+                    }
+                    if (numProcessinng == 1)
+                    {
+                        var batchTime = stopwatch.ElapsedMilliseconds;
+                        if (batchTime >= 30)
+                        {
+                            numProcessinng++;
+                            stopwatch.Restart();
+                            if (originalBitmap != null)
+                            {
+                                try
+                                {
+                                    frame2 = (Bitmap)originalBitmap.Clone();
+                                }
+                                catch (Exception ex)
+                                {
+                                    numProcessinng = 1; // Reset to retry
+                                }
+                            }
+
+                        }
+                    }
+                    if (numProcessinng == 2)
+                    {
+                        var a = frame2;
+                        var batchTime = stopwatch.ElapsedMilliseconds;
+                        if (batchTime >= 30)
+                        {
+                            numProcessinng++;
+                            stopwatch.Restart();
+
+                            if (originalBitmap != null)
+                            {
+                                try
+                                {
+                                    frame3 = (Bitmap)originalBitmap.Clone();
+                                    ActivateFrame1And2Processing(false);
+                                }
+                                catch (Exception ex)
+                                {
+                                    numProcessinng = 2; // Reset to retry
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+
+                // Cleanup original bitmap if not used
+                originalBitmap?.Dispose();
+            }
+            catch (Exception ex)
+            {
             }
         }
 
@@ -444,6 +575,17 @@ namespace temp_module
                 {
                     System.Diagnostics.Debug.WriteLine($"[Save JSON] {ex.Message}");
                 }
+
+
+                results = new DetectInfo[3];
+                yoloPoints = null;
+                frame1 = null;
+                frame2 = null;
+                frame3 = null;
+                wechatQrTexts = null;
+                wechatQrPoints = null;
+                numProcessinng = 0;
+                flagProcess = true;
             }
         }
         
@@ -670,6 +812,10 @@ namespace temp_module
                     cameraBox: picOriginal,
                     processImage: picProcessed,
                     isDebugOcr: false,
+                     points: ref yoloPoints,
+                    qrPoints: ref wechatQrPoints,
+                    qrText: ref wechatQrTexts,
+                    ActivateFrame1And2Processing: ActivateFrame1And2Processing,
                     fileName: null
                 );
                 totalTime3 = sw3.Elapsed.TotalMilliseconds;
@@ -738,6 +884,10 @@ namespace temp_module
                     cameraBox: picOriginal,
                     processImage: picProcessed,
                     isDebugOcr: false,
+                     points: ref yoloPoints,
+                    qrPoints: ref wechatQrPoints,
+                    qrText: ref wechatQrTexts,
+                    ActivateFrame1And2Processing: ActivateFrame1And2Processing,
                     fileName: null
                 );
                 result.TimeProcess = sw1.ElapsedMilliseconds;
@@ -783,6 +933,10 @@ namespace temp_module
                     cameraBox: picOriginal,
                     processImage: picProcessed,
                     isDebugOcr: false,
+                     points: ref yoloPoints,
+                    qrPoints: ref wechatQrPoints,
+                    qrText: ref wechatQrTexts,
+                    ActivateFrame1And2Processing: ActivateFrame1And2Processing,
                     fileName: null
                 );
                 result.TimeProcess = sw2.ElapsedMilliseconds;
@@ -826,6 +980,10 @@ namespace temp_module
                     cameraBox: picOriginal,
                     processImage: picProcessed,
                     isDebugOcr: false,
+                     points: ref yoloPoints,
+                    qrPoints: ref wechatQrPoints,
+                    qrText: ref wechatQrTexts,
+                    ActivateFrame1And2Processing: ActivateFrame1And2Processing,
                     fileName: null
                 );
                 result.TimeProcess = sw3.ElapsedMilliseconds;
@@ -932,6 +1090,128 @@ namespace temp_module
                 _rotationDetectors[i]?.Dispose();
                 _rotationDetectors[i] = null;
             }
+        }
+
+
+        private void ActivateFrame1And2Processing(bool isReset)
+        {
+            if (isReset)
+            {
+                results = new DetectInfo[3];
+                yoloPoints = null;
+                frame1 = null;
+                frame2 = null;
+                frame3 = null;
+                wechatQrTexts = null;
+                wechatQrPoints = null;
+                numProcessinng = 0;
+
+                flagProcess = true;
+
+                return;
+            }
+            if (frame2 == null || frame3 == null || yoloPoints == null)
+            {
+                return;
+            }
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    results[1] = ProcessOCR2(frame2);
+                    CheckResult();
+                }
+                finally
+                {
+                    frame2?.Dispose();
+                }
+            });
+
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    results[2] = ProcessOCR3(frame3);
+                    CheckResult();
+                }
+                finally
+                {
+                    frame3?.Dispose();
+                }
+            });
+        }
+
+        private void btnAutoStatistic_Click(object sender, EventArgs e)
+        {
+            string imagesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+            if (!Directory.Exists(imagesRoot))
+            {
+                MessageBox.Show($"Không tìm thấy thư mục Images: {imagesRoot}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            var sessionDirs = Directory.GetDirectories(imagesRoot)
+                .OrderBy(d =>
+                {
+                    var name = Path.GetFileName(d);
+                    if (int.TryParse(name, out int n)) return n;
+                    return int.MaxValue;
+                })
+                .ToList();
+            if (sessionDirs.Count == 0)
+            {
+                MessageBox.Show("Không tìm thấy session nào trong Images!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            foreach (var sessionDir in sessionDirs)
+            {
+                try
+                {
+                    while (!flagProcess)
+                    {
+                        Console.WriteLine("Waiting for processing...");
+                        System.Threading.Thread.Sleep(50);
+                    }
+                    flagProcess = false;
+                    string sessionName = Path.GetFileName(sessionDir);
+                    int sessionIndex = 0;
+                    int.TryParse(sessionName, out sessionIndex);
+                    countProcessed = sessionIndex;
+
+                    string frame1Path = Path.Combine(sessionDir, $"{sessionName}_attempt-frame_1.jpg");
+                    string frame2Path = Path.Combine(sessionDir, $"{sessionName}_attempt-frame_2.jpg");
+                    string frame3Path = Path.Combine(sessionDir, $"{sessionName}_attempt-frame_3.jpg");
+                    if (!File.Exists(frame1Path) || !File.Exists(frame2Path) || !File.Exists(frame3Path))
+                        continue;
+
+                    totalStopwatch.Restart();
+                    frame1 = Bitmap.FromFile(frame1Path) as Bitmap;
+
+                    System.Threading.Tasks.Task.Run(() =>
+                    {
+                        try
+                        {
+                            results[0] = ProcessOCR1(frame1);
+                            CheckResult();
+                        }
+                        finally
+                        {
+                            frame1?.Dispose();
+                        }
+                    });
+
+                    frame2 = Bitmap.FromFile(frame2Path) as Bitmap;
+                    frame3 = Bitmap.FromFile(frame3Path) as Bitmap;
+                    ActivateFrame1And2Processing(false);
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[AutoStatistic] {ex.Message}");
+                }
+            }
+            MessageBox.Show($"Đã thống kê xong session.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void btnSaveResult_Click(object sender, EventArgs e)

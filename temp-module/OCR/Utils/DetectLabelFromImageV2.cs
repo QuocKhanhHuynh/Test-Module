@@ -70,6 +70,10 @@ namespace temp_module.OCR.Utils
             PictureBox cameraBox,
             PictureBox processImage,
             bool isDebugOcr,
+            ref IEnumerable<OpenCvSharp.Point> points,
+           ref Point2f[] qrPoints,
+           ref string qrText,
+           Action<bool> ActivateFrame1And2Processing,
             string? fileName = null
             )
         {
@@ -120,11 +124,8 @@ namespace temp_module.OCR.Utils
                 // ============================================
                 using var displayFrame = frame.Clone();
                 
-                DetectionResult labelDetection = null;
-                var a = detections.Count;
 
-
-                IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
+                //IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
                 foreach (var detection in detections)
                 {
                     var bbox = detection.BoundingBox;
@@ -149,10 +150,16 @@ namespace temp_module.OCR.Utils
                         }
                     }
 
-                    if (detection.ClassName.ToLower().Contains("label"))
-                    {
-                        labelDetection = detection;
-                    }
+                }
+
+
+                if (points != null)
+                {
+                    ActivateFrame1And2Processing.Invoke(false);
+                }
+                else
+                {
+                    ActivateFrame1And2Processing.Invoke(true);
                 }
 
 
@@ -164,7 +171,7 @@ namespace temp_module.OCR.Utils
                     old?.Dispose();
                 }));
 
-                if (labelDetection != null)
+                if (points != null)
                 {
                     if (isSaving == false)
                     {
@@ -173,19 +180,7 @@ namespace temp_module.OCR.Utils
                     }
                     
                     counter++;
-                    var maskContours = new List<(int x, int y)>();
-
-                    foreach (var contour in labelDetection.Contours)
-                    {
-                        var polygon = contour
-                            .Select(p => (p.X, p.Y))
-                            .ToList();
-                        foreach (var p in polygon)
-                        {
-                            maskContours.Add((p.X, p.Y));
-                        }
-
-                    }
+                    
 
                     //var croptImage = RotationImage.ProcessRotationImage(frame, maskContours); 
                     var croptImage = ContourCropper.CropByContour(frame, points);
@@ -315,7 +310,16 @@ namespace temp_module.OCR.Utils
                     //}));
 
                     //var (qrPoints, qrText) = LabelDetectorZXing.DetectQRCodeZXing(croppedBmp, zxingReader);
-                    var (qrPoints, qrText) = LabelDetectorWeChat.DetectQRCodeWeChat(croppedBmp, weChatQRCode);
+                    //var (qrPoints, qrText) = LabelDetectorWeChat.DetectQRCodeWeChat(croppedBmp, weChatQRCode);
+                    if (qrPoints == null)
+                    {
+                        var (qrPointsLocal, qrTextLocal) = LabelDetectorWeChat.DetectQRCodeWeChat(croppedBmp, weChatQRCode);
+                        if (qrPointsLocal != null)
+                        {
+                            qrPoints = qrPointsLocal;
+                            qrText = qrTextLocal;
+                        }
+                    }
 
                     if (qrPoints == null)
                     {
