@@ -124,7 +124,7 @@ namespace temp_module.OCR.Utils.NewOCR
         /// </summary>
         /// <param name="image">Input image (BGR format)</param>
         /// <returns>List of OCR results with bounding boxes and text</returns>
-        public List<OCRResult> DetectText(Mat image, PictureBox proccessCamera)
+        public List<OCRResult> DetectText(Mat image)
         {
             if (image == null || image.Empty())
             {
@@ -184,55 +184,7 @@ namespace temp_module.OCR.Utils.NewOCR
                 }
             }
 
-            // --- Visualize Crops on PictureBox ---
-            if (proccessCamera != null && crops.Count > 0)
-            {
-                try 
-                {
-                    // Create merged image (white background)
-                    // Ensure at least 1 pixel dimensions
-                    int safeWidth = Math.Max(1, maxWidth);
-                    int safeHeight = Math.Max(1, totalHeight);
-                    
-                    using (Bitmap validBitmap = new Bitmap(safeWidth, safeHeight))
-                    {
-                        using (Graphics g = Graphics.FromImage(validBitmap))
-                        {
-                            g.Clear(Color.White); // White background
-                            int currentY = 0;
-                            
-                            foreach (var crop in crops)
-                            {
-                                using (Bitmap cropBmp = OpenCvSharp.Extensions.BitmapConverter.ToBitmap(crop))
-                                {
-                                    // Draw centered horizontally
-                                    int x = (safeWidth - cropBmp.Width) / 2;
-                                    g.DrawImage(cropBmp, x, currentY);
-                                    currentY += cropBmp.Height + separatedHeight;
-                                }
-                            }
-                        }
-                        
-                        // Update UI thread safely
-                        if (proccessCamera.InvokeRequired)
-                        {
-                            proccessCamera.Invoke(new Action(() => {
-                                proccessCamera.Image?.Dispose();
-                                proccessCamera.Image = (Bitmap)validBitmap.Clone();
-                            }));
-                        }
-                        else
-                        {
-                            proccessCamera.Image?.Dispose();
-                            proccessCamera.Image = (Bitmap)validBitmap.Clone();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Visualize Crops Error] {ex.Message}");
-                }
-            }
+            
 
             if (crops.Count == 0)
             {

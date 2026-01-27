@@ -465,7 +465,8 @@ namespace temp_module.OCR.Utils
                 {
                     // Convert Bitmap to Mat for PaddleOCROpenVINO
                     using var mat = mergedCrop.ToMat();
-                    results = ocr.DetectText(mat, pictureBox);
+
+                    results = ocr.DetectText(mat);
                 }
 
                 if (results?.Count > 0)
