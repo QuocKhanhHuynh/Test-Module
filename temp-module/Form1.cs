@@ -1231,6 +1231,101 @@ namespace temp_module
             MessageBox.Show($"Đã thống kê xong session.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        // Xử lý sự kiện Full Statistic
+        private void btnFullStatistic_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Đường dẫn file JSON input/output
+                string jsonInputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ocr_result_t.json");
+                string jsonOutputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OCR_Result_Template.json");
+                string qrFailPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "qr_fail_list.txt");
+                string txtDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDataTxt");
+
+                if (!File.Exists(jsonInputPath))
+                {
+                    MessageBox.Show($"Không tìm thấy file: {jsonInputPath}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!Directory.Exists(txtDir))
+                {
+                    MessageBox.Show($"Không tìm thấy thư mục ground truth: {txtDir}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Xóa file output cũ nếu có
+                if (File.Exists(jsonOutputPath))
+                    File.Delete(jsonOutputPath);
+                if (File.Exists(qrFailPath))
+                    File.Delete(qrFailPath);
+
+                // Đọc và deserialize JSON
+                var jsonContent = File.ReadAllText(jsonInputPath);
+                var records = System.Text.Json.JsonSerializer.Deserialize<List<temp_module.Models.OcrResultRecord>>(jsonContent);
+
+                if (records == null || records.Count == 0)
+                {
+                    MessageBox.Show("File JSON rỗng hoặc không hợp lệ!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                int processedCount = 0;
+                foreach (var record in records)
+                {
+                    // Tạo image path từ countProcessed (giả sử: Images/{sessionNumber}/{sessionNumber}_attempt-frame_1.jpg)
+                    string sessionNumber = record.CountProcessed.ToString();
+                    string imageFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", sessionNumber, $"{sessionNumber}_attempt-frame_1.jpg");
+
+                    // Map FrameData sang DetectInfo
+                    DetectInfo result1 = MapFrameDataToDetectInfo(record.FrameT);
+                    DetectInfo result2 = MapFrameDataToDetectInfo(record.FrameT1);
+                    DetectInfo result3 = MapFrameDataToDetectInfo(record.FrameT2);
+
+                    // Gọi OcrJsonWriter
+                    OcrJsonWriter.WriteOcrResult(
+                        jsonPath: jsonOutputPath,
+                        qrFailPath: qrFailPath,
+                        txtDir: txtDir,
+                        imageFilePath: imageFilePath,
+                        totalTime1: record.FrameT?.ProcessTimeFrame ?? 0,
+                        totalTime2: record.FrameT1?.ProcessTimeFrame ?? 0,
+                        totalTime3: record.FrameT2?.ProcessTimeFrame ?? 0,
+                        result1: result1,
+                        result2: result2,
+                        result3: result3
+                    );
+
+                    processedCount++;
+                }
+
+                MessageBox.Show($"Đã xử lý {processedCount} records!\n\nOutput:\n- {jsonOutputPath}\n- {qrFailPath}", 
+                    "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Debug.WriteLine($"[FullStatistic] Error: {ex}");
+            }
+        }
+
+        // Helper: Map FrameData sang DetectInfo
+        private DetectInfo MapFrameDataToDetectInfo(temp_module.Models.FrameData frameData)
+        {
+            if (frameData == null)
+                return null;
+
+            return new DetectInfo
+            {
+                QRCode = frameData.QrCodeValue,
+                ProductTotal = frameData.GetTotalValueAsString(),
+                ProductCode = frameData.ProductCodeValue,
+                Size = frameData.SizeValue,
+                Color = frameData.ColorValue
+            };
+        }
+
+
         private void btnSaveResult_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(_lastImportedImagePath) || _lastDetectResult == null)
@@ -1301,6 +1396,16 @@ namespace temp_module
             btnAutoStatistic.Left = btnImportBatch.Right + 10; // Cách phải 10px
             btnAutoStatistic.Click += btnAutoStatistic_Click;
             panelControls.Controls.Add(btnAutoStatistic);
+
+            // Thêm nút Full Statistic
+            var btnFullStatistic = new Button();
+            btnFullStatistic.Text = "Full Statistic";
+            btnFullStatistic.Width = btnImportImage.Width;
+            btnFullStatistic.Height = btnImportImage.Height;
+            btnFullStatistic.Top = btnImportImage.Top;
+            btnFullStatistic.Left = btnAutoStatistic.Right + 10; // Cách phải 10px
+            btnFullStatistic.Click += btnFullStatistic_Click;
+            panelControls.Controls.Add(btnFullStatistic);
 
         }
 
