@@ -186,31 +186,21 @@ namespace temp_module.OCR.Utils
                     var croptImage = ContourCropper.CropByContour(frame, points);
                     croptYoloMat = croptImage.Clone();
 
-                    var test = MatToBitmap(croptImage);
-                    /*processImage.BeginInvoke(new Action(() =>
+                    /*var test = MatToBitmap(croptImage);
+                    processImage.BeginInvoke(new Action(() =>
                     {
                         var old = processImage.Image;
                         processImage.Image = test;
                         old?.Dispose();
-                    }));*/
+                    }));
 
-
-
-
-                    var rotation = RotationImage.CheckLabelRotation(croptImage, rotationDetector);
-                    croptImage = RotationImage.Rotate(croptImage, rotation);//*********************************************************************************************************************
-                    rotationMat = croptImage.Clone();
+                    // OLD: Rotation detection moved to AFTER QR detection (more accurate)
+                    // var rotation = RotationImage.CheckLabelRotation(croptImage, rotationDetector);
+                    // croptImage = RotationImage.Rotate(croptImage, rotation);
+                    
+                    // NOTE: Rotation will be done AFTER QR detection using QR position*/
 
                     var croppedBmp = MatToBitmap(croptImage);
-
-
-                    //processImage.BeginInvoke(new Action(() =>
-                    //{
-                    //    var old = processImage.Image;
-                    //    processImage.Image = croppedBmp;
-                    //    old?.Dispose();
-                    //}));
-
                     var grayStandard = ImageEnhancer.ConvertToGrayscale(croppedBmp);
 
 
@@ -318,6 +308,53 @@ namespace temp_module.OCR.Utils
                         {
                             qrPoints = qrPointsLocal;
                             qrText = qrTextLocal;
+
+                            // ============================================
+                            // NEW: QR-BASED ROTATION DETECTION
+                            // ============================================
+                            // Check if label is upside down using QR position
+                            // Logic: QR should be on the RIGHT side (X > midpoint)
+                            bool isUpsideDown = QRBasedRotationDetector.IsLabelUpsideDown(croppedBmp, qrPoints);
+                            
+                            if (isUpsideDown)
+                            {
+                                Debug.WriteLine("[QR-ROTATION] ⟲ Label is upside down - rotating 180°");
+                                
+                                // Rotate the cropped Mat
+                                var rotatedMat = new Mat();
+                                Cv2.Rotate(croptImage, rotatedMat, RotateFlags.Rotate180);
+                                croptImage.Dispose();
+                                croptImage = rotatedMat;
+                                
+                                // Rotate the enhanced Bitmap
+                                croppedBmp.RotateFlip(System.Drawing.RotateFlipType.Rotate180FlipNone);
+                                
+                                // Rotate QR points to match rotated image
+                                int imgWidth = croppedBmp.Width;
+                                int imgHeight = croppedBmp.Height;
+                                for (int i = 0; i < qrPoints.Length; i++)
+                                {
+                                    qrPoints[i] = new Point2f(
+                                        imgWidth - qrPoints[i].X,
+                                        imgHeight - qrPoints[i].Y
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                Debug.WriteLine("[QR-ROTATION] ✓ Label orientation is correct (0°)");
+                            }
+                            
+                            rotationMat = croptImage.Clone(); // Save rotated version for debug
+
+                            var test = MatToBitmap(rotationMat);
+                            processImage.BeginInvoke(new Action(() =>
+                            {
+                                var old = processImage.Image;
+                                processImage.Image = test;
+                                old?.Dispose();
+                            }));
+
                         }
                     }
 
