@@ -1186,7 +1186,13 @@ namespace temp_module
                         continue;
 
                     totalStopwatch.Restart();
-                    frame1 = Bitmap.FromFile(frame1Path) as Bitmap;
+                    
+                    // Load frame1 from byte array (completely avoid file lock)
+                    byte[] imageBytes1 = File.ReadAllBytes(frame1Path);
+                    using (var ms1 = new MemoryStream(imageBytes1))
+                    {
+                        frame1 = new Bitmap(ms1);
+                    }
 
                     System.Threading.Tasks.Task.Run(() =>
                     {
@@ -1201,8 +1207,19 @@ namespace temp_module
                         }
                     });
 
-                    frame2 = Bitmap.FromFile(frame2Path) as Bitmap;
-                    frame3 = Bitmap.FromFile(frame3Path) as Bitmap;
+                    // Load frame2 and frame3 from byte arrays
+                    byte[] imageBytes2 = File.ReadAllBytes(frame2Path);
+                    using (var ms2 = new MemoryStream(imageBytes2))
+                    {
+                        frame2 = new Bitmap(ms2);
+                    }
+                    
+                    byte[] imageBytes3 = File.ReadAllBytes(frame3Path);
+                    using (var ms3 = new MemoryStream(imageBytes3))
+                    {
+                        frame3 = new Bitmap(ms3);
+                    }
+                    
                     ActivateFrame1And2Processing(false);
 
                 }
@@ -1274,6 +1291,16 @@ namespace temp_module
             btnImportBatch.Left = btnSaveResult.Right + 10; // Cách phải 10px
             btnImportBatch.Click += btnImportBatch_Click;
             panelControls.Controls.Add(btnImportBatch);
+
+            // Thêm nút Auto Statistic
+            var btnAutoStatistic = new Button();
+            btnAutoStatistic.Text = "Auto Statistic";
+            btnAutoStatistic.Width = btnImportImage.Width;
+            btnAutoStatistic.Height = btnImportImage.Height;
+            btnAutoStatistic.Top = btnImportImage.Top;
+            btnAutoStatistic.Left = btnImportBatch.Right + 10; // Cách phải 10px
+            btnAutoStatistic.Click += btnAutoStatistic_Click;
+            panelControls.Controls.Add(btnAutoStatistic);
 
         }
 

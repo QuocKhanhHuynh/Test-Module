@@ -87,11 +87,11 @@ namespace temp_module.OCR.Utils
                 Mat preProcessImageMat = null;
                 Mat croptMergeMat = null;
 
-               
+
                 if (frame == null || frame.Empty())
                 {
                     Debug.WriteLine("[⚠] Frame is null or empty");
-                    return null;
+                    return result;
                 }
 
                 /*Mat compressed = new Mat();
@@ -110,66 +110,68 @@ namespace temp_module.OCR.Utils
                 frame = compressed;*/ ///*****************************************************************************************************************************************************************
                 originMat = frame.Clone();
 
-                
 
-                // ============================================
-                // 1. YOLO DETECTION - Detect trực tiếp trên frame (Mat)
-                // ============================================
-                var detections = yoloDetector.Detect(frame);
-
-              
-                
-                // ============================================
-                // 2. VẼ BOUNDING BOXES LÊN FRAME
-                // ============================================
-                using var displayFrame = frame.Clone();
-                
-
-                //IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
-                foreach (var detection in detections)
+                if (points == null)
                 {
-                    var bbox = detection.BoundingBox;
+                    // ============================================
+                    // 1. YOLO DETECTION - Detect trực tiếp trên frame (Mat)
+                    // ============================================
+                    var detections = yoloDetector.Detect(frame);
 
-                    // Vẽ bounding box
-                    Cv2.Rectangle(displayFrame, bbox, Scalar.Yellow, 2);
 
-                    // Vẽ label text
-                    string label = $"{detection.ClassName}: {detection.Confidence:P0}";
-                    Cv2.PutText(displayFrame, label,
-                        new OpenCvSharp.Point(bbox.X, bbox.Y - 5),
-                        HersheyFonts.HersheySimplex, 0.6, Scalar.Yellow, 2);
 
-                    // Tô màu vùng contour (nếu có)
-                    
-                    if (detection.Contours != null && detection.Contours.Count > 0)
+                    // ============================================
+                    // 2. VẼ BOUNDING BOXES LÊN FRAME
+                    // ============================================
+                    using var displayFrame = frame.Clone();
+
+
+
+                    //IEnumerable<OpenCvSharp.Point> points = new List<OpenCvSharp.Point>();
+                    foreach (var detection in detections)
                     {
-                        foreach (var contour in detection.Contours)
+                        var bbox = detection.BoundingBox;
+
+                        // Vẽ bounding box
+                        Cv2.Rectangle(displayFrame, bbox, Scalar.Yellow, 2);
+
+                        // Vẽ label text
+                        string label = $"{detection.ClassName}: {detection.Confidence:P0}";
+                        Cv2.PutText(displayFrame, label,
+                            new OpenCvSharp.Point(bbox.X, bbox.Y - 5),
+                            HersheyFonts.HersheySimplex, 0.6, Scalar.Yellow, 2);
+
+                        // Tô màu vùng contour (nếu có)
+
+                        if (detection.Contours != null && detection.Contours.Count > 0)
                         {
-                            points = contour.Select(p => new OpenCvSharp.Point(p.X, p.Y)).ToArray();
-                            Cv2.FillPoly(displayFrame, new[] { points }, new Scalar(0, 255, 255, 100)); // Màu vàng nhạt, alpha 100
+                            foreach (var contour in detection.Contours)
+                            {
+                                points = contour.Select(p => new OpenCvSharp.Point(p.X, p.Y)).ToArray();
+                                Cv2.FillPoly(displayFrame, new[] { points }, new Scalar(0, 255, 255, 100)); // Màu vàng nhạt, alpha 100
+                            }
                         }
+
                     }
 
+                    if (points != null)
+                    {
+                        ActivateFrame1And2Processing.Invoke(false);
+                    }
+                    else
+                    {
+                        ActivateFrame1And2Processing.Invoke(true);
+                    }
+
+
+                    var displayBmp = MatToBitmap(displayFrame);
+                    cameraBox.BeginInvoke(new Action(() =>
+                    {
+                        var old = cameraBox.Image;
+                        cameraBox.Image = displayBmp;
+                        old?.Dispose();
+                    }));
                 }
-
-
-                if (points != null)
-                {
-                    ActivateFrame1And2Processing.Invoke(false);
-                }
-                else
-                {
-                    ActivateFrame1And2Processing.Invoke(true);
-                }
-
-
-                var displayBmp = MatToBitmap(displayFrame);
-                cameraBox.BeginInvoke(new Action(() =>
-                {
-                    var old = cameraBox.Image;
-                    cameraBox.Image = displayBmp;
-                    old?.Dispose();
-                }));
 
                 if (points != null)
                 {
@@ -309,52 +311,6 @@ namespace temp_module.OCR.Utils
                             qrPoints = qrPointsLocal;
                             qrText = qrTextLocal;
 
-                            // ============================================
-                            // NEW: QR-BASED ROTATION DETECTION
-                            // ============================================
-                            // Check if label is upside down using QR position
-                            // Logic: QR should be on the RIGHT side (X > midpoint)
-                            bool isUpsideDown = QRBasedRotationDetector.IsLabelUpsideDown(croppedBmp, qrPoints);
-                            
-                            if (isUpsideDown)
-                            {
-                                Debug.WriteLine("[QR-ROTATION] ⟲ Label is upside down - rotating 180°");
-                                
-                                // Rotate the cropped Mat
-                                var rotatedMat = new Mat();
-                                Cv2.Rotate(croptImage, rotatedMat, RotateFlags.Rotate180);
-                                croptImage.Dispose();
-                                croptImage = rotatedMat;
-                                
-                                // Rotate the enhanced Bitmap
-                                croppedBmp.RotateFlip(System.Drawing.RotateFlipType.Rotate180FlipNone);
-                                
-                                // Rotate QR points to match rotated image
-                                int imgWidth = croppedBmp.Width;
-                                int imgHeight = croppedBmp.Height;
-                                for (int i = 0; i < qrPoints.Length; i++)
-                                {
-                                    qrPoints[i] = new Point2f(
-                                        imgWidth - qrPoints[i].X,
-                                        imgHeight - qrPoints[i].Y
-                                    );
-                                }
-                            }
-                            else
-                            {
-                                Debug.WriteLine("[QR-ROTATION] ✓ Label orientation is correct (0°)");
-                            }
-                            
-                            rotationMat = croptImage.Clone(); // Save rotated version for debug
-
-                            var test = MatToBitmap(rotationMat);
-                            processImage.BeginInvoke(new Action(() =>
-                            {
-                                var old = processImage.Image;
-                                processImage.Image = test;
-                                old?.Dispose();
-                            }));
-
                         }
                     }
 
@@ -366,6 +322,52 @@ namespace temp_module.OCR.Utils
                         //SaveImageWithStep(2, workSessionId.ToString(), 4, null, originMat, croptYoloMat, rotationMat, preProcessImageMat, null);
                         return result;
                     }
+
+                    // ============================================
+                    // NEW: QR-BASED ROTATION DETECTION
+                    // ============================================
+                    // Check if label is upside down using QR position
+                    // Logic: QR should be on the RIGHT side (X > midpoint)
+                    bool isUpsideDown = QRBasedRotationDetector.IsLabelUpsideDown(croppedBmp, qrPoints);
+
+                    if (isUpsideDown)
+                    {
+                        Debug.WriteLine("[QR-ROTATION] ⟲ Label is upside down - rotating 180°");
+
+                        // Rotate the cropped Mat
+                        var rotatedMat = new Mat();
+                        Cv2.Rotate(croptImage, rotatedMat, RotateFlags.Rotate180);
+                        croptImage.Dispose();
+                        croptImage = rotatedMat;
+
+                        // Rotate the enhanced Bitmap
+                        croppedBmp.RotateFlip(System.Drawing.RotateFlipType.Rotate180FlipNone);
+
+                        // Rotate QR points to match rotated image
+                        int imgWidth = croppedBmp.Width;
+                        int imgHeight = croppedBmp.Height;
+                        for (int i = 0; i < qrPoints.Length; i++)
+                        {
+                            qrPoints[i] = new Point2f(
+                                imgWidth - qrPoints[i].X,
+                                imgHeight - qrPoints[i].Y
+                            );
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[QR-ROTATION] ✓ Label orientation is correct (0°)");
+                    }
+
+                    rotationMat = croptImage.Clone(); // Save rotated version for debug
+
+                    var test = MatToBitmap(rotationMat);
+                    processImage.BeginInvoke(new Action(() =>
+                    {
+                        var old = processImage.Image;
+                        processImage.Image = test;
+                        old?.Dispose();
+                    }));
 
                     result.QRCode = qrText;
 
